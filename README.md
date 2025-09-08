@@ -11,9 +11,13 @@ Aplicação web com múltiplos calculadores para diferentes tipos de remuneraç�
 
 ### 2. Calculadora PJ
 - Cálculo de salário líquido para Pessoa Jurídica
-- Simulação de impostos do Simples Nacional
+- Escolha do regime tributário: Simples Nacional, Lucro Presumido ou Lucro Real
+- Simulação dos impostos de cada regime:
+  - Simples Nacional: 6%
+  - Lucro Presumido: IRPJ, CSLL, PIS, COFINS, ISS (alíquotas detalhadas)
+  - Lucro Real: IRPJ, CSLL, PIS, COFINS, ISS (alíquotas detalhadas)
 - Comparativo com regime CLT equivalente
-- Detalhamento de benefícios perdidos/ganhos
+- Detalhamento dos impostos e benefícios
 
 ### 3. Calculadora CLT
 - Cálculo detalhado de salário líquido CLT
@@ -37,7 +41,7 @@ Aplicação web com múltiplos calculadores para diferentes tipos de remuneraç�
 
 1. Abra o arquivo `index.html` no navegador
 2. Escolha o tipo de cálculo desejado
-3. Para CLT/PJ, informe o valor bruto e clique em "Calcular". Para o comparativo, informe os dois valores e clique em "Comparar" (use "Limpar" para reiniciar a tela).
+3. Para CLT/PJ, informe o valor bruto e clique em "Calcular". Para PJ, selecione o regime tributário desejado. Para o comparativo, informe os dois valores e clique em "Comparar" (use "Limpar" para reiniciar a tela).
 4. Visualize o resultado detalhado com:
    - Valores bruto e líquido
    - Impostos e deduções
@@ -56,3 +60,4 @@ Aplicação web com múltiplos calculadores para diferentes tipos de remuneraç�
 - Cálculos baseados na legislação brasileira atual
 - Tabelas de INSS e IRRF atualizadas para 2024
 - Simples Nacional considerando alíquota inicial do Anexo III
+- Lucro Presumido e Lucro Real com alíquotas padrão para serviços de TI
