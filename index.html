@@ -39,6 +39,14 @@
                 <label for="salaryPJ">Valor Bruto Mensal (R$):</label>
                 <input type="text" id="salaryPJ" placeholder="0,00" maxlength="20">
             </div>
+            <div class="input-group">
+                <label for="regimePJ">Regime Tributário:</label>
+                <select id="regimePJ">
+                    <option value="simples">Simples Nacional</option>
+                    <option value="presumido">Lucro Presumido</option>
+                    <option value="real">Lucro Real</option>
+                </select>
+            </div>
             <div class="button-group">
                 <button onclick="calculatePJSalary()">Calcular</button>
                 <button onclick="clearPJ()">Limpar</button>

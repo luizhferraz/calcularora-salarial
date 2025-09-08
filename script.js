@@ -68,66 +68,52 @@ function calcularIRRF(baseCalculo) {
 
 function calculatePJSalary() {
     const salaryInput = document.getElementById('salaryPJ');
+    const regimeInput = document.getElementById('regimePJ');
     const salaryStr = salaryInput.value.replace(/\./g, '').replace(',', '.');
     const grossSalary = parseFloat(salaryStr);
+    const regime = regimeInput.value;
 
     if (isNaN(grossSalary) || grossSalary < 0) {
         alert('Por favor, insira um valor válido');
         return;
     }
 
-    // Cálculo do Simples Nacional (6% para faixa inicial)
-    const simplesNacional = grossSalary * 0.06;
-    const netSalaryPJ = grossSalary - simplesNacional;
+    let impostos = 0;
+    let detalhes = '';
+    if (regime === 'simples') {
+        impostos = grossSalary * 0.06;
+        detalhes = `Simples Nacional (6%): R$ ${grossSalary * 0.06}`;
+    } else if (regime === 'presumido') {
+        // Lucro Presumido: IRPJ 4.8%, CSLL 2.88%, PIS 0.65%, COFINS 3%, ISS 2%
+        const irpj = grossSalary * 0.048;
+        const csll = grossSalary * 0.0288;
+        const pis = grossSalary * 0.0065;
+        const cofins = grossSalary * 0.03;
+        const iss = grossSalary * 0.02;
+        impostos = irpj + csll + pis + cofins + iss;
+        detalhes = `Lucro Presumido:\nIRPJ (4,8%): R$ ${irpj.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCSLL (2,88%): R$ ${csll.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nPIS (0,65%): R$ ${pis.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCOFINS (3%): R$ ${cofins.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nISS (2%): R$ ${iss.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+    } else if (regime === 'real') {
+        // Lucro Real: IRPJ 15%, CSLL 9%, PIS 0.65%, COFINS 7.6%, ISS 2%
+        const irpj = grossSalary * 0.15;
+        const csll = grossSalary * 0.09;
+        const pis = grossSalary * 0.0065;
+        const cofins = grossSalary * 0.076;
+        const iss = grossSalary * 0.02;
+        impostos = irpj + csll + pis + cofins + iss;
+        detalhes = `Lucro Real:\nIRPJ (15%): R$ ${irpj.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCSLL (9%): R$ ${csll.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nPIS (0,65%): R$ ${pis.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCOFINS (7,6%): R$ ${cofins.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nISS (2%): R$ ${iss.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+    }
+
+    const netSalary = grossSalary - impostos;
     const currentDate = new Date().toLocaleDateString('pt-BR');
-    
-    // Cálculo equivalente CLT
-    // Para ter o mesmo custo que um PJ, considerando encargos do empregador
-    const custoTotalPJ = grossSalary;
-    const fatorCLT = 1.8; // Considerando FGTS, INSS patronal, 13º, férias e outros encargos
-    const salarioCLTEquivalente = custoTotalPJ / fatorCLT;
-    
-    // Cálculo dos descontos CLT
-    const inss = calcularINSS(salarioCLTEquivalente);
-    const irrf = calcularIRRF(salarioCLTEquivalente - inss);
-    const netSalaryCLT = salarioCLTEquivalente - inss - irrf;
-    
-    // Benefícios CLT mensalizados
-    const fgts = salarioCLTEquivalente * 0.08;
-    const decimoTerceiro = salarioCLTEquivalente / 12;
-    const ferias = (salarioCLTEquivalente * 1.333) / 12; // 1/3 de férias
-    const totalBeneficiosCLT = fgts + decimoTerceiro + ferias;
-    
-    // Formatar números
     const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // Exibir resultados
     document.getElementById('currentDate').textContent = currentDate;
     document.getElementById('exchangeRate').textContent = 'N/A';
     document.getElementById('originalValue').textContent = 'N/A';
     document.getElementById('convertedValue').textContent = formatBRL(grossSalary);
-    document.getElementById('totalTaxes').textContent = formatBRL(simplesNacional);
-    document.getElementById('netSalary').textContent = formatBRL(netSalaryPJ);
-    
-    // Detalhamento completo com comparativo CLT
-    document.getElementById('taxDetails').textContent = 
-        `=== Regime PJ ===\n` +
-        `Simples Nacional (6%): R$ ${formatBRL(simplesNacional)}\n` +
-        `Salário Líquido PJ: R$ ${formatBRL(netSalaryPJ)}\n\n` +
-        `=== Equivalente CLT ===\n` +
-        `Salário Bruto CLT: R$ ${formatBRL(salarioCLTEquivalente)}\n` +
-        `INSS: R$ ${formatBRL(inss)}\n` +
-        `IRRF: R$ ${formatBRL(irrf)}\n` +
-        `Salário Líquido CLT: R$ ${formatBRL(netSalaryCLT)}\n\n` +
-        `=== Benefícios CLT (mensalizados) ===\n` +
-        `FGTS: R$ ${formatBRL(fgts)}\n` +
-        `13º Salário: R$ ${formatBRL(decimoTerceiro)}\n` +
-        `Férias + 1/3: R$ ${formatBRL(ferias)}\n` +
-        `Total Benefícios: R$ ${formatBRL(totalBeneficiosCLT)}\n\n` +
-        `=== Comparativo Final ===\n` +
-        `Total Líquido PJ: R$ ${formatBRL(netSalaryPJ)}\n` +
-        `Total Líquido CLT + Benefícios: R$ ${formatBRL(netSalaryCLT + totalBeneficiosCLT)}`;
-    
+    document.getElementById('totalTaxes').textContent = formatBRL(impostos);
+    document.getElementById('netSalary').textContent = formatBRL(netSalary);
+    document.getElementById('taxDetails').textContent = detalhes;
     document.getElementById('result').style.display = 'block';
 }
 
