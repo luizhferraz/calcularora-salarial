@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Salário USD → BRL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: none;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Conversor de Salário (USD → BRL)</h1>
+    
+    <div class="input-group">
+        <label for="salaryUSD">Salário em USD:</label>
+        <input type="number" id="salaryUSD" step="0.01" min="0">
+    </div>
+
+    <button onclick="convertSalary()">Converter</button>
+
+    <div id="result" class="result">
+        <h3>Resultado:</h3>
+        <p>Data do cálculo: <span id="currentDate"></span></p>
+        <p>Cotação do dólar: R$ <span id="exchangeRate"></span></p>
+        <p>Salário em dólares: USD <span id="originalValue"></span></p>
+        <p>Salário bruto em reais: R$ <span id="convertedValue"></span></p>
+        <p>Total de impostos: R$ <span id="totalTaxes"></span></p>
+        <p>Salário líquido: R$ <span id="netSalary"></span></p>
+        <div class="tax-details">
+            <h4>Detalhamento dos Impostos:</h4>
+            <pre id="taxDetails"></pre>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
