@@ -14,6 +14,7 @@
         <button onclick="showCalculator('dolar')" class="calc-button">Converter Salário USD → BRL</button>
         <button onclick="showCalculator('pj')" class="calc-button">Calcular Salário PJ Líquido</button>
         <button onclick="showCalculator('clt')" class="calc-button">Calcular Salário CLT Líquido</button>
+        <button onclick="showCalculator('compare')" class="calc-button">Comparativo CLT ↔ PJ</button>
     </div>
 
         <div id="dolarCalc" style="display: none;" class="calculator-screen">
@@ -54,6 +55,59 @@
             <div class="button-group">
                 <button onclick="calculateCLTSalary()">Calcular</button>
                 <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="compareCalc" style="display: none;" class="calculator-screen">
+        <div class="calc-container">
+            <h2>Comparativo CLT ↔ PJ</h2>
+            <div class="comparison-inputs">
+                <div class="input-group">
+                    <label for="compareCLT">Salário CLT (R$):</label>
+                    <input type="text" id="compareCLT" placeholder="0,00" maxlength="20">
+                </div>
+                <div class="input-group">
+                    <label for="comparePJ">Valor PJ (R$):</label>
+                    <input type="text" id="comparePJ" placeholder="0,00" maxlength="20">
+                </div>
+            </div>
+            <div class="button-group">
+                <button onclick="compareRegimes()">Comparar</button>
+                <button onclick="clearComparison()">Limpar</button>
+                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+            </div>
+            <div id="compareResults" style="display: none;" class="comparison-tables">
+                <div class="table-wrapper">
+                    <h3>CLT</h3>
+                    <table class="comparison-table">
+                        <tbody>
+                            <tr><th>Salário Bruto</th><td id="clt_bruto">-</td></tr>
+                            <tr><th>INSS</th><td id="clt_inss">-</td></tr>
+                            <tr><th>IRRF</th><td id="clt_irrf">-</td></tr>
+                            <tr><th>Salário Líquido</th><td id="clt_liquido">-</td></tr>
+                            <tr><th>FGTS (8%)</th><td id="clt_fgts">-</td></tr>
+                            <tr><th>13º (mensalizado)</th><td id="clt_13">-</td></tr>
+                            <tr><th>Férias + 1/3 (mensalizado)</th><td id="clt_ferias">-</td></tr>
+                            <tr><th>Total Benefícios</th><td id="clt_beneficios">-</td></tr>
+                            <tr class="row-strong"><th>Total (Líquido + Benefícios)</th><td id="clt_total">-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-wrapper">
+                    <h3>PJ</h3>
+                    <table class="comparison-table">
+                        <tbody>
+                            <tr><th>Valor Bruto</th><td id="pj_bruto">-</td></tr>
+                            <tr><th>Simples (6%)</th><td id="pj_simples">-</td></tr>
+                            <tr class="row-strong"><th>Valor Líquido</th><td id="pj_liquido">-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="compareSummary" style="display:none;" class="comparison-summary">
+                <p><strong>Diferença mensal:</strong> <span id="diff_mensal">-</span></p>
+                <p><strong>Diferença anual:</strong> <span id="diff_anual">-</span></p>
             </div>
         </div>
     </div>

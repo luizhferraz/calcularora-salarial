@@ -3,6 +3,14 @@ function showCalculator(type) {
     document.getElementById('dolarCalc').style.display = type === 'dolar' ? 'block' : 'none';
     document.getElementById('pjCalc').style.display = type === 'pj' ? 'block' : 'none';
     document.getElementById('cltCalc').style.display = type === 'clt' ? 'block' : 'none';
+    const compareEl = document.getElementById('compareCalc');
+    if (compareEl) {
+        compareEl.style.display = type === 'compare' ? 'block' : 'none';
+        if (type === 'compare') {
+            // garantir que a tela inicie limpa
+            clearComparison();
+        }
+    }
     document.getElementById('result').style.display = 'none';
     
     const dollarFields = document.querySelectorAll('.dollar-only');
@@ -15,7 +23,17 @@ function showSelectionScreen() {
     document.getElementById('selectionScreen').style.display = 'block';
     document.getElementById('dolarCalc').style.display = 'none';
     document.getElementById('pjCalc').style.display = 'none';
+    const cltEl = document.getElementById('cltCalc');
+    if (cltEl) cltEl.style.display = 'none';
+    const compareEl = document.getElementById('compareCalc');
+    if (compareEl) compareEl.style.display = 'none';
     document.getElementById('result').style.display = 'none';
+
+    // garantir que componentes de comparativo não permaneçam visíveis
+    const results = document.getElementById('compareResults');
+    const summary = document.getElementById('compareSummary');
+    if (results) results.style.display = 'none';
+    if (summary) summary.style.display = 'none';
 }
 
 function calcularINSS(salario) {
@@ -214,4 +232,90 @@ function calculateCLTSalary() {
         `Custo Total (Líquido + Benefícios): R$ ${formatBRL(netSalary + totalBeneficios)}`;
     
     document.getElementById('result').style.display = 'block';
+}
+
+function compareRegimes() {
+    const cltInput = document.getElementById('compareCLT');
+    const pjInput = document.getElementById('comparePJ');
+    
+    const cltStr = cltInput.value.replace(/\./g, '').replace(',', '.');
+    const pjStr = pjInput.value.replace(/\./g, '').replace(',', '.');
+    
+    const cltSalary = parseFloat(cltStr);
+    const pjSalary = parseFloat(pjStr);
+
+    if (isNaN(cltSalary) || isNaN(pjSalary) || cltSalary < 0 || pjSalary < 0) {
+        alert('Por favor, insira valores válidos');
+        return;
+    }
+
+    // Cálculos CLT
+    const inss = calcularINSS(cltSalary);
+    const baseIR = cltSalary - inss;
+    const irrf = calcularIRRF(baseIR);
+    const totalDeductionsCLT = inss + irrf;
+    const netSalaryCLT = cltSalary - totalDeductionsCLT;
+
+    // Benefícios CLT
+    const fgts = cltSalary * 0.08;
+    const decimoTerceiro = cltSalary / 12;
+    const ferias = (cltSalary * 1.333) / 12;
+    const totalBeneficiosCLT = fgts + decimoTerceiro + ferias;
+
+    // Cálculos PJ
+    const simplesNacional = pjSalary * 0.06;
+    const netSalaryPJ = pjSalary - simplesNacional;
+
+    // Formatar números
+    const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+
+    // Preencher tabelas lado a lado
+    document.getElementById('clt_bruto').textContent = `R$ ${formatBRL(cltSalary)}`;
+    document.getElementById('clt_inss').textContent = `R$ ${formatBRL(inss)}`;
+    document.getElementById('clt_irrf').textContent = `R$ ${formatBRL(irrf)}`;
+    document.getElementById('clt_liquido').textContent = `R$ ${formatBRL(netSalaryCLT)}`;
+    document.getElementById('clt_fgts').textContent = `R$ ${formatBRL(fgts)}`;
+    document.getElementById('clt_13').textContent = `R$ ${formatBRL(decimoTerceiro)}`;
+    document.getElementById('clt_ferias').textContent = `R$ ${formatBRL(ferias)}`;
+    document.getElementById('clt_beneficios').textContent = `R$ ${formatBRL(totalBeneficiosCLT)}`;
+    document.getElementById('clt_total').textContent = `R$ ${formatBRL(netSalaryCLT + totalBeneficiosCLT)}`;
+
+    document.getElementById('pj_bruto').textContent = `R$ ${formatBRL(pjSalary)}`;
+    document.getElementById('pj_simples').textContent = `R$ ${formatBRL(simplesNacional)}`;
+    document.getElementById('pj_liquido').textContent = `R$ ${formatBRL(netSalaryPJ)}`;
+
+    // Sumário
+    const diffMensal = (netSalaryCLT + totalBeneficiosCLT) - netSalaryPJ;
+    const diffAnual = (netSalaryCLT + totalBeneficiosCLT) * 12 - netSalaryPJ * 12;
+    document.getElementById('diff_mensal').textContent = `R$ ${formatBRL(Math.abs(diffMensal))} ${diffMensal >= 0 ? '(CLT > PJ)' : '(PJ > CLT)'}`;
+    document.getElementById('diff_anual').textContent = `R$ ${formatBRL(Math.abs(diffAnual))} ${diffAnual >= 0 ? '(CLT > PJ)' : '(PJ > CLT)'}`;
+
+    document.getElementById('currentDate').textContent = currentDate;
+    document.getElementById('compareResults').style.display = 'flex';
+    document.getElementById('compareSummary').style.display = 'block';
+}
+
+function clearComparison() {
+    const cltInput = document.getElementById('compareCLT');
+    const pjInput = document.getElementById('comparePJ');
+    if (cltInput) cltInput.value = '';
+    if (pjInput) pjInput.value = '';
+
+    const idsToClear = [
+        'clt_bruto','clt_inss','clt_irrf','clt_liquido','clt_fgts','clt_13','clt_ferias','clt_beneficios','clt_total',
+        'pj_bruto','pj_simples','pj_liquido','diff_mensal','diff_anual'
+    ];
+    idsToClear.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '-';
+    });
+
+    const results = document.getElementById('compareResults');
+    const summary = document.getElementById('compareSummary');
+    if (results) results.style.display = 'none';
+    if (summary) summary.style.display = 'none';
+
+    const dateEl = document.getElementById('currentDate');
+    if (dateEl) dateEl.textContent = '';
 }
