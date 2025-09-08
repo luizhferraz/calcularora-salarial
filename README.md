@@ -1,6 +1,6 @@
 # Calculadora Salarial
 
-Aplicação web com múltiplos calculadores para diferentes tipos de remuneração: conversão de salários em dólar, cálculos de salário PJ e CLT.
+Aplicação web com múltiplos calculadores para diferentes tipos de remuneração: conversão de salários em dólar, cálculos de salário PJ e CLT, e comparativo CLT ↔ PJ.
 
 ## Funcionalidades
 
@@ -24,11 +24,20 @@ Aplicação web com múltiplos calculadores para diferentes tipos de remuneraç�
   - 13º Salário
   - Férias + 1/3
 
+### 4. Comparativo CLT ↔ PJ
+- Entrada de dois valores: salário CLT (bruto) e valor PJ (bruto)
+- Exibição de resultados em duas tabelas lado a lado:
+  - Tabela CLT: salário bruto, INSS, IRRF, líquido, FGTS, 13º (mensalizado), férias + 1/3 (mensalizado), total de benefícios e total (líquido + benefícios)
+  - Tabela PJ: valor bruto, Simples Nacional (6%) e valor líquido
+- Sumário com diferença mensal e anual entre os regimes
+- Ação "Limpar" para zerar os campos e ocultar os resultados
+- Navegação: ao clicar em "Voltar", todos os painéis de resultado do comparativo são ocultados
+
 ## Como usar
 
 1. Abra o arquivo `index.html` no navegador
 2. Escolha o tipo de cálculo desejado
-3. Digite o valor do salário
+3. Para CLT/PJ, informe o valor bruto e clique em "Calcular". Para o comparativo, informe os dois valores e clique em "Comparar" (use "Limpar" para reiniciar a tela).
 4. Visualize o resultado detalhado com:
    - Valores bruto e líquido
    - Impostos e deduções
