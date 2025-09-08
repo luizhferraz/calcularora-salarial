@@ -11,7 +11,8 @@ async function getExchangeRate() {
 
 async function convertSalary() {
     const salaryInput = document.getElementById('salaryUSD');
-    const salary = parseFloat(salaryInput.value);
+    const salaryStr = salaryInput.value.replace(/\./g, '').replace(',', '.');
+    const salary = parseFloat(salaryStr);
 
     if (isNaN(salary) || salary < 0) {
         alert('Por favor, insira um valor válido');
@@ -34,13 +35,15 @@ async function convertSalary() {
 
     // Exibir resultados
     document.getElementById('currentDate').textContent = currentDate;
-    document.getElementById('exchangeRate').textContent = rate.toFixed(2);
-    document.getElementById('originalValue').textContent = salary.toFixed(2);
-    document.getElementById('convertedValue').textContent = grossSalaryBRL.toFixed(2);
-    document.getElementById('totalTaxes').textContent = totalTaxes.toFixed(2);
-    document.getElementById('netSalary').textContent = netSalaryBRL.toFixed(2);
+    const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    document.getElementById('exchangeRate').textContent = formatBRL(rate);
+    document.getElementById('originalValue').textContent = formatBRL(salary);
+    document.getElementById('convertedValue').textContent = formatBRL(grossSalaryBRL);
+    document.getElementById('totalTaxes').textContent = formatBRL(totalTaxes);
+    document.getElementById('netSalary').textContent = formatBRL(netSalaryBRL);
     document.getElementById('taxDetails').textContent = 
-        `Simples Nacional (6%): R$ ${totalTaxes.toFixed(2)}`;
+        `Simples Nacional (6%): R$ ${formatBRL(totalTaxes)}`;
     
     document.getElementById('result').style.display = 'block';
 }
