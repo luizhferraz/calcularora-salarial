@@ -319,3 +319,27 @@ function clearComparison() {
     const dateEl = document.getElementById('currentDate');
     if (dateEl) dateEl.textContent = '';
 }
+
+function clearDollar() {
+    const input = document.getElementById('salaryUSD');
+    if (input) input.value = '';
+    document.getElementById('result').style.display = 'none';
+    const taxDetails = document.getElementById('taxDetails');
+    if (taxDetails) taxDetails.textContent = '';
+}
+
+function clearPJ() {
+    const input = document.getElementById('salaryPJ');
+    if (input) input.value = '';
+    document.getElementById('result').style.display = 'none';
+    const taxDetails = document.getElementById('taxDetails');
+    if (taxDetails) taxDetails.textContent = '';
+}
+
+function clearCLT() {
+    const input = document.getElementById('salaryCLT');
+    if (input) input.value = '';
+    document.getElementById('result').style.display = 'none';
+    const taxDetails = document.getElementById('taxDetails');
+    if (taxDetails) taxDetails.textContent = '';
+}
