@@ -1,3 +1,52 @@
+function showCalculator(type) {
+    document.getElementById('selectionScreen').style.display = 'none';
+    document.getElementById('dolarCalc').style.display = type === 'dolar' ? 'block' : 'none';
+    document.getElementById('pjCalc').style.display = type === 'pj' ? 'block' : 'none';
+    document.getElementById('result').style.display = 'none';
+    
+    const dollarFields = document.querySelectorAll('.dollar-only');
+    dollarFields.forEach(field => {
+        field.style.display = type === 'dolar' ? 'block' : 'none';
+    });
+}
+
+function showSelectionScreen() {
+    document.getElementById('selectionScreen').style.display = 'block';
+    document.getElementById('dolarCalc').style.display = 'none';
+    document.getElementById('pjCalc').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+}
+
+function calculatePJSalary() {
+    const salaryInput = document.getElementById('salaryPJ');
+    const salaryStr = salaryInput.value.replace(/\./g, '').replace(',', '.');
+    const grossSalary = parseFloat(salaryStr);
+
+    if (isNaN(grossSalary) || grossSalary < 0) {
+        alert('Por favor, insira um valor válido');
+        return;
+    }
+
+    // Cálculo do Simples Nacional (6% para faixa inicial)
+    const simplesNacional = grossSalary * 0.06;
+    const netSalary = grossSalary - simplesNacional;
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+    
+    // Formatar números
+    const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Exibir resultados
+    document.getElementById('currentDate').textContent = currentDate;
+    document.getElementById('exchangeRate').textContent = 'N/A';
+    document.getElementById('originalValue').textContent = 'N/A';
+    document.getElementById('convertedValue').textContent = formatBRL(grossSalary);
+    document.getElementById('totalTaxes').textContent = formatBRL(simplesNacional);
+    document.getElementById('netSalary').textContent = formatBRL(netSalary);
+    document.getElementById('taxDetails').textContent = `Simples Nacional (6%): R$ ${formatBRL(simplesNacional)}`;
+    
+    document.getElementById('result').style.display = 'block';
+}
+
 async function getExchangeRate() {
     try {
         const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
