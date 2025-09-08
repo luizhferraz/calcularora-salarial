@@ -2,6 +2,7 @@ function showCalculator(type) {
     document.getElementById('selectionScreen').style.display = 'none';
     document.getElementById('dolarCalc').style.display = type === 'dolar' ? 'block' : 'none';
     document.getElementById('pjCalc').style.display = type === 'pj' ? 'block' : 'none';
+    document.getElementById('cltCalc').style.display = type === 'clt' ? 'block' : 'none';
     document.getElementById('result').style.display = 'none';
     
     const dollarFields = document.querySelectorAll('.dollar-only');
@@ -158,6 +159,59 @@ async function convertSalary() {
     document.getElementById('netSalary').textContent = formatBRL(netSalaryBRL);
     document.getElementById('taxDetails').textContent = 
         `Simples Nacional (6%): R$ ${formatBRL(totalTaxes)}`;
+    
+    document.getElementById('result').style.display = 'block';
+}
+
+function calculateCLTSalary() {
+    const salaryInput = document.getElementById('salaryCLT');
+    const salaryStr = salaryInput.value.replace(/\./g, '').replace(',', '.');
+    const grossSalary = parseFloat(salaryStr);
+
+    if (isNaN(grossSalary) || grossSalary < 0) {
+        alert('Por favor, insira um valor válido');
+        return;
+    }
+
+    // Cálculo dos descontos
+    const inss = calcularINSS(grossSalary);
+    const baseIR = grossSalary - inss;
+    const irrf = calcularIRRF(baseIR);
+    
+    // Benefícios
+    const fgts = grossSalary * 0.08;
+    const decimoTerceiro = grossSalary / 12;
+    const ferias = (grossSalary * 1.333) / 12; // Inclui 1/3 de férias
+    
+    const totalDeductions = inss + irrf;
+    const netSalary = grossSalary - totalDeductions;
+    const totalBeneficios = fgts + decimoTerceiro + ferias;
+
+    // Formatar números
+    const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+
+    // Exibir resultados
+    document.getElementById('currentDate').textContent = currentDate;
+    document.getElementById('convertedValue').textContent = formatBRL(grossSalary);
+    document.getElementById('totalTaxes').textContent = formatBRL(totalDeductions);
+    document.getElementById('netSalary').textContent = formatBRL(netSalary);
+    
+    // Detalhamento
+    document.getElementById('taxDetails').textContent = 
+        `=== Descontos ===\n` +
+        `INSS: R$ ${formatBRL(inss)}\n` +
+        `IRRF: R$ ${formatBRL(irrf)}\n` +
+        `Total Descontos: R$ ${formatBRL(totalDeductions)}\n\n` +
+        `=== Benefícios (mensalizados) ===\n` +
+        `FGTS: R$ ${formatBRL(fgts)}\n` +
+        `13º Salário: R$ ${formatBRL(decimoTerceiro)}\n` +
+        `Férias + 1/3: R$ ${formatBRL(ferias)}\n` +
+        `Total Benefícios: R$ ${formatBRL(totalBeneficios)}\n\n` +
+        `=== Resumo ===\n` +
+        `Salário Bruto: R$ ${formatBRL(grossSalary)}\n` +
+        `Salário Líquido: R$ ${formatBRL(netSalary)}\n` +
+        `Custo Total (Líquido + Benefícios): R$ ${formatBRL(netSalary + totalBeneficios)}`;
     
     document.getElementById('result').style.display = 'block';
 }

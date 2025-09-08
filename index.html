@@ -66,11 +66,56 @@
         }
         #selectionScreen {
             text-align: center;
-            margin: 40px 0;
+            margin: 40px auto;
+            max-width: 600px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .calc-button {
-            display: block;
-            margin: 15px auto;
+            display: inline-block;
+            margin: 10px;
+            width: calc(100% - 20px);
+            max-width: 300px;
+            height: 50px;
+            font-size: 16px;
+        }
+        .calculator-screen {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .calc-container {
+            text-align: center;
+            padding: 20px;
+        }
+        .calc-container h2 {
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .calc-container .input-group {
+            margin: 25px auto;
+            max-width: 400px;
+        }
+        .calc-container input {
+            width: 100%;
+            max-width: 300px;
+        }
+        .button-group {
+            text-align: center;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .button-group button {
+            flex: 0 1 auto;
+            min-width: 200px;
         }
         .tax-details {
             margin-top: 20px;
@@ -95,26 +140,49 @@
         <h2>Escolha o tipo de cálculo:</h2>
         <button onclick="showCalculator('dolar')" class="calc-button">Converter Salário USD → BRL</button>
         <button onclick="showCalculator('pj')" class="calc-button">Calcular Salário PJ Líquido</button>
+        <button onclick="showCalculator('clt')" class="calc-button">Calcular Salário CLT Líquido</button>
     </div>
 
-    <div id="dolarCalc" style="display: none;">
-        <h2>Conversor de Salário (USD → BRL)</h2>
-        <div class="input-group">
-            <label for="salaryUSD">Salário em USD:</label>
-            <input type="text" id="salaryUSD" placeholder="0,00">
+        <div id="dolarCalc" style="display: none;" class="calculator-screen">
+        <div class="calc-container">
+            <h2>Conversor de Salário (USD → BRL)</h2>
+            <div class="input-group">
+                <label for="salaryUSD">Salário em USD:</label>
+                <input type="text" id="salaryUSD" placeholder="0,00" maxlength="20">
+            </div>
+            <div class="button-group">
+                <button onclick="convertSalary()">Converter</button>
+                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+            </div>
         </div>
-        <button onclick="convertSalary()">Converter</button>
-        <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
     </div>
 
-    <div id="pjCalc" style="display: none;">
-        <h2>Calculadora de Salário PJ</h2>
-        <div class="input-group">
-            <label for="salaryPJ">Valor Bruto Mensal (R$):</label>
-            <input type="text" id="salaryPJ" placeholder="0,00">
+    <div id="pjCalc" style="display: none;" class="calculator-screen">
+        <div class="calc-container">
+            <h2>Calculadora de Salário PJ</h2>
+            <div class="input-group">
+                <label for="salaryPJ">Valor Bruto Mensal (R$):</label>
+                <input type="text" id="salaryPJ" placeholder="0,00" maxlength="20">
+            </div>
+            <div class="button-group">
+                <button onclick="calculatePJSalary()">Calcular</button>
+                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+            </div>
         </div>
-        <button onclick="calculatePJSalary()">Calcular</button>
-        <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+    </div>
+
+    <div id="cltCalc" style="display: none;" class="calculator-screen">
+        <div class="calc-container">
+            <h2>Calculadora de Salário CLT</h2>
+            <div class="input-group">
+                <label for="salaryCLT">Salário Bruto Mensal (R$):</label>
+                <input type="text" id="salaryCLT" placeholder="0,00" maxlength="20">
+            </div>
+            <div class="button-group">
+                <button onclick="calculateCLTSalary()">Calcular</button>
+                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+            </div>
+        </div>
     </div>
 
     <div id="result" class="result">
