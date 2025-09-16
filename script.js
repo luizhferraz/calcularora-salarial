@@ -158,6 +158,7 @@ async function convertSalary() {
     
     document.getElementById('exchangeRate').textContent = formatBRL(rate);
     document.getElementById('originalValue').textContent = formatBRL(salary);
+    document.getElementById('hourlyUSD').textContent = formatBRL(salary / 160);
     document.getElementById('convertedValue').textContent = formatBRL(grossSalaryBRL);
     document.getElementById('totalTaxes').textContent = formatBRL(totalTaxes);
     document.getElementById('netSalary').textContent = formatBRL(netSalaryBRL);
