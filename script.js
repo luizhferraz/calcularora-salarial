@@ -128,44 +128,153 @@ async function getExchangeRate() {
     }
 }
 
+// Função para formatar números no padrão brasileiro
+function formatCurrency(value) {
+    return value.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function calculatePJTaxes(grossAmount) {
+    // Valores anualizados para determinar a faixa
+    const annualGross = grossAmount * 12;
+    
+    // Tabela Simples Nacional 2023 - Anexo III (Serviços)
+    let aliquota;
+    let deducao;
+    
+    if (annualGross <= 180000) {
+        aliquota = 0.06;
+        deducao = 0;
+    } else if (annualGross <= 360000) {
+        aliquota = 0.1120;
+        deducao = 9360;
+    } else if (annualGross <= 720000) {
+        aliquota = 0.1350;
+        deducao = 17640;
+    } else if (annualGross <= 1800000) {
+        aliquota = 0.1600;
+        deducao = 35640;
+    } else if (annualGross <= 3600000) {
+        aliquota = 0.2100;
+        deducao = 125640;
+    } else {
+        aliquota = 0.3350;
+        deducao = 648000;
+    }
+    
+    // Calcula alíquota efetiva
+    const aliquotaEfetiva = ((annualGross * aliquota) - deducao) / annualGross;
+    
+    // Calcula imposto mensal
+    const monthlyTax = grossAmount * aliquotaEfetiva;
+    
+    return {
+        tax: monthlyTax,
+        effectiveRate: aliquotaEfetiva * 100
+    };
+}
+
 async function convertSalary() {
-    const salaryInput = document.getElementById('salaryUSD');
-    const salaryStr = salaryInput.value.replace(/\./g, '').replace(',', '.');
-    const salary = parseFloat(salaryStr);
+    try {
+        // Pegar e validar input
+        let salaryUSD = document.getElementById('salaryUSD').value
+            .replace(/\./g, '')
+            .replace(',', '.');
+        salaryUSD = parseFloat(salaryUSD);
 
-    if (isNaN(salary) || salary < 0) {
-        alert('Por favor, insira um valor válido');
-        return;
+        if (isNaN(salaryUSD)) {
+            alert('Por favor, insira um valor válido');
+            return;
+        }
+
+        // Obter taxa do dólar
+        const rate = await getDollarRate();
+
+        // Cálculos básicos
+        const convertedValue = salaryUSD * rate;
+        const hourlyRate = salaryUSD / 176;
+        const yearlyRate = salaryUSD * 12;
+
+        // Usar novo cálculo para PJ
+        const pjTaxes = calculatePJTaxes(convertedValue);
+        const totalTaxes = pjTaxes.tax;
+        const netSalary = convertedValue - totalTaxes;
+
+        // Atualizar detalhamento dos impostos
+        document.getElementById('taxDetails').textContent = 
+            `Simples Nacional (${pjTaxes.effectiveRate.toFixed(2)}%): R$ ${formatCurrency(totalTaxes)}
+Total de impostos: R$ ${formatCurrency(totalTaxes)}`;
+
+        // Atualizar elementos
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('exchangeRate').textContent = formatCurrency(rate);
+        document.getElementById('originalValue').textContent = formatCurrency(salaryUSD);
+        document.getElementById('convertedValue').textContent = formatCurrency(convertedValue);
+        document.getElementById('hourlyUSD').textContent = formatCurrency(hourlyRate);
+        document.getElementById('yearlyUSD').textContent = formatCurrency(yearlyRate);
+        document.getElementById('totalTaxes').textContent = formatCurrency(totalTaxes);
+        document.getElementById('netSalary').textContent = formatCurrency(netSalary);
+
+        // Mostrar resultado
+        document.getElementById('result').style.display = 'block';
+
+    } catch (error) {
+        console.error('Erro ao converter salário:', error);
+        alert('Erro ao converter salário. Por favor, tente novamente.');
     }
+}
 
-    const rate = await getExchangeRate();
-    if (!rate) {
-        alert('Erro ao obter a cotação do dólar. Tente novamente mais tarde.');
-        return;
+// Função para obter cotação do dólar
+async function getDollarRate() {
+    try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data = await response.json();
+        return data.rates.BRL;
+    } catch (error) {
+        console.error('Erro ao obter cotação:', error);
+        return 5.00; // Valor padrão em caso de erro
     }
+}
 
-    const grossSalaryBRL = salary * rate;
-    const currentDate = new Date().toLocaleDateString('pt-BR');
-
-    // Cálculo dos impostos para consultoria de TI no Simples Nacional
-    const aliquotaSimples = 0.06;  // 6% - Anexo III do Simples Nacional (exemplo para faixa inicial)
-    const totalTaxes = grossSalaryBRL * aliquotaSimples;
-    const netSalaryBRL = grossSalaryBRL - totalTaxes;
-
-    // Exibir resultados
-    document.getElementById('currentDate').textContent = currentDate;
-    const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function calculateINSS(salary) {
+    // Tabela INSS 2023 com faixas progressivas
+    let inss = 0;
     
-    document.getElementById('exchangeRate').textContent = formatBRL(rate);
-    document.getElementById('originalValue').textContent = formatBRL(salary);
-    document.getElementById('hourlyUSD').textContent = formatBRL(salary / 160);
-    document.getElementById('convertedValue').textContent = formatBRL(grossSalaryBRL);
-    document.getElementById('totalTaxes').textContent = formatBRL(totalTaxes);
-    document.getElementById('netSalary').textContent = formatBRL(netSalaryBRL);
-    document.getElementById('taxDetails').textContent = 
-        `Simples Nacional (6%): R$ ${formatBRL(totalTaxes)}`;
+    if (salary <= 1320) {
+        inss = salary * 0.075;
+    } else if (salary <= 2571.29) {
+        inss = (1320 * 0.075) + ((salary - 1320) * 0.09);
+    } else if (salary <= 3856.94) {
+        inss = (1320 * 0.075) + ((2571.29 - 1320) * 0.09) + ((salary - 2571.29) * 0.12);
+    } else if (salary <= 7507.49) {
+        inss = (1320 * 0.075) + ((2571.29 - 1320) * 0.09) + ((3856.94 - 2571.29) * 0.12) + ((salary - 3856.94) * 0.14);
+    } else {
+        // Teto do INSS
+        inss = 877.24;
+    }
     
-    document.getElementById('result').style.display = 'block';
+    return inss;
+}
+
+function calculateIRRF(baseCalculo) {
+    // Tabela IRRF 2023
+    let irrf = 0;
+    
+    if (baseCalculo <= 1903.98) {
+        irrf = 0;
+    } else if (baseCalculo <= 2826.65) {
+        irrf = (baseCalculo * 0.075) - 142.80;
+    } else if (baseCalculo <= 3751.05) {
+        irrf = (baseCalculo * 0.15) - 354.80;
+    } else if (baseCalculo <= 4664.68) {
+        irrf = (baseCalculo * 0.225) - 636.13;
+    } else {
+        irrf = (baseCalculo * 0.275) - 869.36;
+    }
+    
+    return Math.max(0, irrf); // Garante que o IRRF não seja negativo
 }
 
 function calculateCLTSalary() {
