@@ -17,6 +17,16 @@ function showCalculator(type) {
     dollarFields.forEach(field => {
         field.style.display = type === 'dolar' ? 'block' : 'none';
     });
+    
+    // Esconder todos os elementos específicos
+    document.querySelectorAll('.dollar-only, .pj-calculator-only').forEach(el => el.style.display = 'none');
+    
+    // Mostrar elementos específicos baseado no tipo
+    if (type === 'dolar') {
+        document.querySelectorAll('.dollar-only').forEach(el => el.style.display = 'block');
+    } else if (type === 'pj') {
+        document.querySelectorAll('.pj-calculator-only').forEach(el => el.style.display = 'block');
+    }
 }
 
 function showSelectionScreen() {
