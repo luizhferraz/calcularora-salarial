@@ -287,6 +287,98 @@ function clearPJ() {
     document.getElementById('result').style.display = 'none';
 }
 
+function compareRegimes() {
+    try {
+        const cltSalary = parseMoneyValue(document.getElementById('compareCLT').value);
+        const pjValue = parseMoneyValue(document.getElementById('comparePJ').value);
+
+        if (isNaN(cltSalary) || isNaN(pjValue)) {
+            alert('Por favor, insira valores válidos');
+            return;
+        }
+
+        // Cálculos CLT (mantém os mesmos pois são de 2024)
+        const inss = calcularINSS(cltSalary);
+        const baseIRRF = cltSalary - inss;
+        const irrf = calcularIRRF(baseIRRF);
+        const fgts = cltSalary * 0.08;
+        const ferias = (cltSalary + (cltSalary / 3)) / 12;
+        const decimoTerceiro = cltSalary / 12;
+        
+        const liquidoCLT = cltSalary - inss - irrf;
+        const beneficios = fgts + ferias + decimoTerceiro;
+        const totalCLT = liquidoCLT + beneficios;
+
+        // Cálculos PJ usando Simples Nacional 2025
+        const pjAnual = pjValue * 12;
+        const folhaPagamento = pjAnual * 0.28; // 28% para tentar enquadramento no Anexo III
+
+        // Usar a nova função de cálculo do Simples Nacional 2025
+        const resultado = calcularImpostoDevido(
+            pjValue,           // valor mensal
+            pjAnual,          // receita bruta 12 meses
+            folhaPagamento    // folha de pagamento 12 meses
+        );
+        
+        const liquidoPJ = pjValue - resultado.impostoDevido;
+
+        // Atualizar tabela CLT
+        document.getElementById('clt_bruto').textContent = formatCurrency(cltSalary);
+        document.getElementById('clt_inss').textContent = formatCurrency(inss);
+        document.getElementById('clt_irrf').textContent = formatCurrency(irrf);
+        document.getElementById('clt_liquido').textContent = formatCurrency(liquidoCLT);
+        document.getElementById('clt_fgts').textContent = formatCurrency(fgts);
+        document.getElementById('clt_13').textContent = formatCurrency(decimoTerceiro);
+        document.getElementById('clt_ferias').textContent = formatCurrency(ferias);
+        document.getElementById('clt_beneficios').textContent = formatCurrency(beneficios);
+        document.getElementById('clt_total').textContent = formatCurrency(totalCLT);
+
+        // Atualizar tabela PJ com detalhamento do Simples Nacional 2025
+        document.getElementById('pj_bruto').textContent = formatCurrency(pjValue);
+        document.getElementById('pj_simples').textContent = 
+            `${formatCurrency(resultado.impostoDevido)} (${resultado.aliquotaEfetiva.toFixed(2)}% - Anexo ${resultado.anexoAplicado})`;
+        document.getElementById('pj_liquido').textContent = formatCurrency(liquidoPJ);
+
+        // Calcular e mostrar diferenças
+        const difMensal = liquidoPJ - totalCLT;
+        const difAnual = difMensal * 12;
+
+        document.getElementById('diff_mensal').textContent = 
+            `${formatCurrency(difMensal)} ${difMensal > 0 ? '(favorável ao PJ)' : '(favorável ao CLT)'}`;
+        document.getElementById('diff_anual').textContent = formatCurrency(difAnual);
+
+        // Mostrar resultados
+        document.getElementById('compareResults').style.display = 'block';
+        document.getElementById('compareSummary').style.display = 'block';
+
+    } catch (error) {
+        console.error('Erro ao comparar regimes:', error);
+        alert('Erro ao realizar comparação. Por favor, tente novamente.');
+    }
+}
+
+function clearComparison() {
+    // Limpar inputs
+    document.getElementById('compareCLT').value = '';
+    document.getElementById('comparePJ').value = '';
+
+    // Esconder resultados
+    document.getElementById('compareResults').style.display = 'none';
+    document.getElementById('compareSummary').style.display = 'none';
+
+    // Resetar valores das tabelas
+    const elements = [
+        'clt_bruto', 'clt_inss', 'clt_irrf', 'clt_liquido', 
+        'clt_fgts', 'clt_13', 'clt_ferias', 'clt_beneficios', 
+        'clt_total', 'pj_bruto', 'pj_simples', 'pj_liquido',
+        'diff_mensal', 'diff_anual'
+    ];
+    
+    elements.forEach(id => {
+        document.getElementById(id).textContent = '-';
+    });
+}
+
 async function getDollarRate() {
     try {
         const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');

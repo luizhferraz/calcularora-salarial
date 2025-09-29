@@ -29,24 +29,57 @@ function determinarAnexo(fatorR) {
 }
 
 function calcularAliquotaEfetiva(receitaBruta12Meses, anexo) {
+    // Encontrar a faixa correta, considerando o limite máximo do Simples
+    if (receitaBruta12Meses > 4800000) {
+        return 0.3350; // Alíquota máxima para empresas que ultrapassam o limite
+    }
+
     const faixa = anexo.faixas.find((f, i) => 
         receitaBruta12Meses <= f.limite || i === anexo.faixas.length - 1
     );
     
-    return (receitaBruta12Meses * faixa.aliquota - faixa.deducao) / receitaBruta12Meses;
+    const aliquotaEfetiva = (receitaBruta12Meses * faixa.aliquota - faixa.deducao) / receitaBruta12Meses;
+    return Math.min(aliquotaEfetiva, faixa.aliquota); // Garante que não ultrapasse a alíquota nominal
 }
 
 function calcularImpostoDevido(valorMensal, receitaBruta12Meses, folhaPagamento12Meses) {
-    const fatorR = calcularFatorR(folhaPagamento12Meses, receitaBruta12Meses);
-    const anexo = determinarAnexo(fatorR);
-    const aliquotaEfetiva = calcularAliquotaEfetiva(receitaBruta12Meses, anexo);
-    
-    return {
-        receitaBruta: receitaBruta12Meses,
-        fatorR: fatorR,
-        anexoAplicado: fatorR >= 0.28 ? 'III' : 'V',
-        aliquotaNominal: anexo.faixas.find(f => receitaBruta12Meses <= f.limite).aliquota,
-        aliquotaEfetiva: aliquotaEfetiva,
-        impostoDevido: valorMensal * aliquotaEfetiva
-    };
+    try {
+        // Validar inputs
+        if (receitaBruta12Meses > 4800000) {
+            return {
+                receitaBruta: receitaBruta12Meses,
+                fatorR: 0,
+                anexoAplicado: 'Excedeu limite',
+                aliquotaNominal: 0.3350,
+                aliquotaEfetiva: 0.3350,
+                impostoDevido: valorMensal * 0.3350
+            };
+        }
+
+        const fatorR = calcularFatorR(folhaPagamento12Meses, receitaBruta12Meses);
+        const anexo = determinarAnexo(fatorR);
+        const aliquotaEfetiva = calcularAliquotaEfetiva(receitaBruta12Meses, anexo);
+        
+        const faixaAtual = anexo.faixas.find(f => receitaBruta12Meses <= f.limite);
+        
+        return {
+            receitaBruta: receitaBruta12Meses,
+            fatorR: fatorR,
+            anexoAplicado: fatorR >= 0.28 ? 'III' : 'V',
+            aliquotaNominal: faixaAtual.aliquota,
+            aliquotaEfetiva: aliquotaEfetiva,
+            impostoDevido: valorMensal * aliquotaEfetiva
+        };
+    } catch (error) {
+        console.error('Erro no cálculo do imposto:', error);
+        // Retornar cálculo seguro em caso de erro
+        return {
+            receitaBruta: receitaBruta12Meses,
+            fatorR: 0,
+            anexoAplicado: 'Erro - usando alíquota máxima',
+            aliquotaNominal: 0.3350,
+            aliquotaEfetiva: 0.3350,
+            impostoDevido: valorMensal * 0.3350
+        };
+    }
 }
