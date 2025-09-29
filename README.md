@@ -10,17 +10,18 @@ Uma ferramenta web para cálculos e conversões salariais, incluindo comparativo
 - Cálculo automático do valor hora/mensal
 - Exibição da cotação do dólar atual
 - Cálculo do salário anual em dólares
-- Cálculo dos impostos aplicáveis
+- Cálculo dos impostos considerando regras do Simples Nacional 2025
 
 ### 2. Calculadora de Salário PJ
 - Cálculo do salário líquido PJ
 - Input por salário mensal ou valor hora
 - Cálculo automático do valor hora/mensal
 - Suporte a diferentes regimes tributários:
-  - Simples Nacional (com alíquotas progressivas)
+  - Simples Nacional 2025 (com análise de Fator R)
   - Lucro Presumido
   - Lucro Real
 - Detalhamento dos impostos aplicados
+- Análise automática do enquadramento (Anexo III ou V)
 
 ### 3. Calculadora de Salário CLT
 - Cálculo do salário líquido CLT
@@ -38,11 +39,29 @@ Uma ferramenta web para cálculos e conversões salariais, incluindo comparativo
 
 ### Cálculos Implementados
 - **Valor Hora**: Base de 176 horas mensais
-- **INSS**: Tabela progressiva 2023
-- **IRRF**: Tabela progressiva 2023
-- **Simples Nacional**: Anexo III (Serviços)
+- **INSS**: Tabela progressiva 2024
+- **IRRF**: Tabela progressiva 2024
+- **Simples Nacional 2025**:
+  - Fator R para determinação do anexo
+  - Anexo III (se Fator R ≥ 28%)
+  - Anexo V (se Fator R < 28%)
   - Alíquotas progressivas por faixa de faturamento
-  - Deduções conforme tabela oficial
+  - Deduções conforme tabela oficial 2025
+
+### Tabelas do Simples Nacional 2025
+#### Anexo III (Fator R ≥ 28%)
+| Faixa | Receita Bruta 12 meses | Alíquota | Dedução |
+|-------|------------------------|-----------|----------|
+| 1ª    | Até 180.000           | 6,0%     | 0        |
+| 2ª    | Até 360.000           | 11,2%    | 9.360    |
+| ...mais faixas...
+
+#### Anexo V (Fator R < 28%)
+| Faixa | Receita Bruta 12 meses | Alíquota | Dedução |
+|-------|------------------------|-----------|----------|
+| 1ª    | Até 180.000           | 15,5%    | 0        |
+| 2ª    | Até 360.000           | 18,0%    | 4.500    |
+| ...mais faixas...
 
 ### Formatação
 - Valores monetários no padrão brasileiro (R$ 1.234,56)

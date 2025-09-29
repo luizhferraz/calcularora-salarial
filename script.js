@@ -78,19 +78,41 @@ function calcularIRRF(baseCalculo) {
 
 function calculatePJSalary() {
     try {
+        // Obter e validar inputs
         const salaryInput = document.getElementById('salaryPJ').value;
         const grossSalary = parseMoneyValue(salaryInput);
+        const folhaPagamento = parseMoneyValue(document.getElementById('folhaPagamento')?.value || '0');
+        const receitaBruta = parseMoneyValue(document.getElementById('receitaBruta')?.value || '0');
         
         if (isNaN(grossSalary) || grossSalary <= 0) {
-            alert('Por favor, insira um valor válido');
+            alert('Por favor, insira um valor válido para o salário');
             return;
         }
 
-        // Calcular impostos usando a tabela do Simples Nacional
-        const simplesTotals = calculateSimplesTax(grossSalary);
-        const totalTaxes = simplesTotals.tax;
-        const netSalary = grossSalary - totalTaxes;
+        // Calcular valores básicos
         const hourlyRate = grossSalary / 176;
+        
+        // Calcular impostos baseado no regime
+        const regime = document.getElementById('regimePJ').value;
+        let totalTaxes, resultado;
+
+        if (regime === 'simples') {
+            resultado = calcularImpostoDevido(grossSalary, receitaBruta || grossSalary * 12, folhaPagamento || grossSalary);
+            totalTaxes = resultado.impostoDevido;
+        } else {
+            // Fallback para cálculo simples (6%)
+            totalTaxes = grossSalary * 0.06;
+            resultado = {
+                receitaBruta: grossSalary * 12,
+                fatorR: 0,
+                anexoAplicado: 'V',
+                aliquotaNominal: 0.06,
+                aliquotaEfetiva: 0.06,
+                impostoDevido: totalTaxes
+            };
+        }
+
+        const netSalary = grossSalary - totalTaxes;
 
         // Atualizar valores na tela
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
@@ -101,10 +123,14 @@ function calculatePJSalary() {
 
         // Atualizar detalhamento dos impostos
         document.getElementById('taxDetails').textContent = 
-`Receita Anual Projetada: R$ ${formatCurrency(simplesTotals.annualRevenue)}
-Simples Nacional (${simplesTotals.effectiveRate.toFixed(2)}%): R$ ${formatCurrency(totalTaxes)}
-Total de impostos: R$ ${formatCurrency(totalTaxes)}`;
+`Receita Bruta Anual: R$ ${formatCurrency(resultado.receitaBruta)}
+Fator R: ${(resultado.fatorR * 100).toFixed(2)}%
+Anexo Aplicado: ${resultado.anexoAplicado}
+Alíquota Nominal: ${(resultado.aliquotaNominal * 100).toFixed(2)}%
+Alíquota Efetiva: ${(resultado.aliquotaEfetiva * 100).toFixed(2)}%
+Imposto Devido: R$ ${formatCurrency(resultado.impostoDevido)}`;
 
+        // Mostrar resultado
         document.getElementById('result').style.display = 'block';
 
     } catch (error) {
@@ -163,7 +189,6 @@ function calculateSimplesTax(monthlyRevenue) {
 
 async function convertSalary() {
     try {
-        // Pegar valor do input e converter para número
         const salaryInput = document.getElementById('salaryUSD').value;
         const salaryUSD = parseMoneyValue(salaryInput);
         
@@ -172,15 +197,20 @@ async function convertSalary() {
             return;
         }
 
-        // Obter cotação e fazer cálculos básicos
         const rate = await getDollarRate();
         const convertedValue = salaryUSD * rate;
         const hourlyRate = salaryUSD / 176;
         const yearlyRate = salaryUSD * 12;
+        const yearlyBRL = convertedValue * 12;
 
-        // Cálculos de impostos simplificados (6% Simples Nacional)
-        const simplesTotals = calculateSimplesTax(convertedValue);
-        const totalTaxes = simplesTotals.tax;
+        // Usar o mesmo cálculo do PJ com Simples Nacional
+        const resultado = calcularImpostoDevido(
+            convertedValue,          // valor mensal
+            yearlyBRL,              // receita bruta 12 meses
+            convertedValue * 0.28    // folha de pagamento mínima para Anexo III
+        );
+
+        const totalTaxes = resultado.impostoDevido;
         const netSalary = convertedValue - totalTaxes;
 
         // Atualizar valores na tela
@@ -193,13 +223,15 @@ async function convertSalary() {
         document.getElementById('totalTaxes').textContent = formatCurrency(totalTaxes);
         document.getElementById('netSalary').textContent = formatCurrency(netSalary);
 
-        // Atualizar detalhamento dos impostos com alíquota efetiva
+        // Atualizar detalhamento dos impostos
         document.getElementById('taxDetails').textContent = 
-`Receita Anual Projetada: R$ ${formatCurrency(simplesTotals.annualRevenue)}
-Simples Nacional (${simplesTotals.effectiveRate.toFixed(2)}%): R$ ${formatCurrency(totalTaxes)}
-Total de impostos: R$ ${formatCurrency(totalTaxes)}`;
+`Receita Bruta Anual: R$ ${formatCurrency(resultado.receitaBruta)}
+Fator R: ${(resultado.fatorR * 100).toFixed(2)}%
+Anexo Aplicado: ${resultado.anexoAplicado}
+Alíquota Nominal: ${(resultado.aliquotaNominal * 100).toFixed(2)}%
+Alíquota Efetiva: ${(resultado.aliquotaEfetiva * 100).toFixed(2)}%
+Imposto Devido: R$ ${formatCurrency(resultado.impostoDevido)}`;
 
-        // Mostrar resultado
         document.getElementById('result').style.display = 'block';
 
     } catch (error) {
@@ -250,6 +282,8 @@ function updatePJSalaryFromHourly() {
 function clearPJ() {
     document.getElementById('salaryPJ').value = '';
     document.getElementById('hourlyPJInput').value = '';
+    document.getElementById('folhaPagamento').value = '';
+    document.getElementById('receitaBruta').value = '';
     document.getElementById('result').style.display = 'none';
 }
 

@@ -55,6 +55,14 @@
                     <option value="real">Lucro Real</option>
                 </select>
             </div>
+            <div class="input-group simples-fields">
+                <label for="folhaPagamento">Folha de Pagamento 12 meses (R$):</label>
+                <input type="text" id="folhaPagamento" placeholder="0,00" maxlength="20">
+            </div>
+            <div class="input-group simples-fields">
+                <label for="receitaBruta">Receita Bruta 12 meses (R$):</label>
+                <input type="text" id="receitaBruta" placeholder="0,00" maxlength="20">
+            </div>
             <div class="button-group">
                 <button onclick="calculatePJSalary()">Calcular</button>
                 <button onclick="clearPJ()">Limpar</button>
@@ -148,6 +156,7 @@
         </div>
     </div>
 
+    <script src="simples-nacional.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
