@@ -173,7 +173,7 @@ async function convertSalary() {
         }
 
         // Obter cotação e fazer cálculos básicos
-        const rate = 5.00; // Taxa fixa para teste (substitua pela API quando estiver funcionando)
+        const rate = await getDollarRate();
         const convertedValue = salaryUSD * rate;
         const hourlyRate = salaryUSD / 176;
         const yearlyRate = salaryUSD * 12;
@@ -251,4 +251,16 @@ function clearPJ() {
     document.getElementById('salaryPJ').value = '';
     document.getElementById('hourlyPJInput').value = '';
     document.getElementById('result').style.display = 'none';
+}
+
+async function getDollarRate() {
+    try {
+        const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
+        const data = await response.json();
+        return parseFloat(data.USDBRL.bid);
+    } catch (error) {
+        console.error('Erro ao obter cotação do dólar:', error);
+        alert('Não foi possível obter a cotação do dólar. Usando valor padrão de R$ 5,00');
+        return 5.00; // Valor fallback em caso de erro
+    }
 }
