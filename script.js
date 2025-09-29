@@ -287,6 +287,57 @@ function clearPJ() {
     document.getElementById('result').style.display = 'none';
 }
 
+function calculateCLTSalary() {
+    try {
+        const salaryInput = document.getElementById('salaryCLT').value;
+        const grossSalary = parseMoneyValue(salaryInput);
+        
+        if (isNaN(grossSalary) || grossSalary <= 0) {
+            alert('Por favor, insira um valor válido');
+            return;
+        }
+
+        // Cálculos CLT
+        const inss = calcularINSS(grossSalary);
+        const baseIRRF = grossSalary - inss;
+        const irrf = calcularIRRF(baseIRRF);
+        const fgts = grossSalary * 0.08;
+        const ferias = (grossSalary + (grossSalary / 3)) / 12; // Férias + 1/3
+        const decimoTerceiro = grossSalary / 12;
+        
+        const liquidoCLT = grossSalary - inss - irrf;
+        const beneficios = fgts + ferias + decimoTerceiro;
+        const totalCLT = liquidoCLT + beneficios;
+
+        // Atualizar valores na tela
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('convertedValue').textContent = formatCurrency(grossSalary);
+        document.getElementById('totalTaxes').textContent = formatCurrency(inss + irrf);
+        document.getElementById('netSalary').textContent = formatCurrency(liquidoCLT);
+
+        // Atualizar detalhamento dos impostos
+        document.getElementById('taxDetails').textContent = 
+`INSS (${((inss/grossSalary)*100).toFixed(2)}%): R$ ${formatCurrency(inss)}
+IRRF (${((irrf/grossSalary)*100).toFixed(2)}%): R$ ${formatCurrency(irrf)}
+FGTS (8%): R$ ${formatCurrency(fgts)}
+Férias + 1/3 (mensal): R$ ${formatCurrency(ferias)}
+13º Salário (mensal): R$ ${formatCurrency(decimoTerceiro)}
+Total Benefícios: R$ ${formatCurrency(beneficios)}
+Total Líquido + Benefícios: R$ ${formatCurrency(totalCLT)}`;
+
+        document.getElementById('result').style.display = 'block';
+
+    } catch (error) {
+        console.error('Erro ao calcular salário CLT:', error);
+        alert('Erro ao calcular salário CLT. Por favor, tente novamente.');
+    }
+}
+
+function clearCLT() {
+    document.getElementById('salaryCLT').value = '';
+    document.getElementById('result').style.display = 'none';
+}
+
 function compareRegimes() {
     try {
         const cltSalary = parseMoneyValue(document.getElementById('compareCLT').value);
