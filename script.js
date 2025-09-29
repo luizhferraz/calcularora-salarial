@@ -67,68 +67,55 @@ function calcularIRRF(baseCalculo) {
 }
 
 function calculatePJSalary() {
-    const salaryInput = document.getElementById('salaryPJ');
-    const regimeInput = document.getElementById('regimePJ');
-    const salaryStr = salaryInput.value.replace(/\./g, '').replace(',', '.');
-    const grossSalary = parseFloat(salaryStr);
-    const regime = regimeInput.value;
-
-    if (isNaN(grossSalary) || grossSalary < 0) {
-        alert('Por favor, insira um valor válido');
-        return;
-    }
-
-    let impostos = 0;
-    let detalhes = '';
-    if (regime === 'simples') {
-        impostos = grossSalary * 0.06;
-        detalhes = `Simples Nacional (6%): R$ ${grossSalary * 0.06}`;
-    } else if (regime === 'presumido') {
-        // Lucro Presumido: IRPJ 4.8%, CSLL 2.88%, PIS 0.65%, COFINS 3%, ISS 2%
-        const irpj = grossSalary * 0.048;
-        const csll = grossSalary * 0.0288;
-        const pis = grossSalary * 0.0065;
-        const cofins = grossSalary * 0.03;
-        const iss = grossSalary * 0.02;
-        impostos = irpj + csll + pis + cofins + iss;
-        detalhes = `Lucro Presumido:\nIRPJ (4,8%): R$ ${irpj.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCSLL (2,88%): R$ ${csll.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nPIS (0,65%): R$ ${pis.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCOFINS (3%): R$ ${cofins.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nISS (2%): R$ ${iss.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-    } else if (regime === 'real') {
-        // Lucro Real: IRPJ 15%, CSLL 9%, PIS 0.65%, COFINS 7.6%, ISS 2%
-        const irpj = grossSalary * 0.15;
-        const csll = grossSalary * 0.09;
-        const pis = grossSalary * 0.0065;
-        const cofins = grossSalary * 0.076;
-        const iss = grossSalary * 0.02;
-        impostos = irpj + csll + pis + cofins + iss;
-        detalhes = `Lucro Real:\nIRPJ (15%): R$ ${irpj.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCSLL (9%): R$ ${csll.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nPIS (0,65%): R$ ${pis.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nCOFINS (7,6%): R$ ${cofins.toLocaleString('pt-BR', {minimumFractionDigits:2})}\nISS (2%): R$ ${iss.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-    }
-
-    const netSalary = grossSalary - impostos;
-    const currentDate = new Date().toLocaleDateString('pt-BR');
-    const formatBRL = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    document.getElementById('currentDate').textContent = currentDate;
-    document.getElementById('exchangeRate').textContent = 'N/A';
-    document.getElementById('originalValue').textContent = 'N/A';
-    document.getElementById('convertedValue').textContent = formatBRL(grossSalary);
-    document.getElementById('totalTaxes').textContent = formatBRL(impostos);
-    document.getElementById('netSalary').textContent = formatBRL(netSalary);
-    document.getElementById('taxDetails').textContent = detalhes;
-    document.getElementById('result').style.display = 'block';
-}
-
-async function getExchangeRate() {
     try {
-        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        const data = await response.json();
-        return data.rates.BRL;
+        // Limpar resultados anteriores
+        document.getElementById('result').style.display = 'none';
+
+        // Obter e validar o valor do salário
+        const salaryInput = document.getElementById('salaryPJ').value
+            .replace(/\./g, '')
+            .replace(',', '.');
+        const grossSalary = parseFloat(salaryInput);
+
+        if (isNaN(grossSalary)) {
+            alert('Por favor, insira um valor válido');
+            return;
+        }
+
+        // Calcular valores
+        const hourlyRate = grossSalary / 176; // 176 horas mensais
+        const taxRate = 0.06; // 6% Simples Nacional
+        const taxes = grossSalary * taxRate;
+        const netSalary = grossSalary - taxes;
+
+        // Atualizar data
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
+
+        // Atualizar valores
+        document.getElementById('convertedValue').textContent = formatCurrency(grossSalary);
+        document.getElementById('pjHourly').textContent = formatCurrency(hourlyRate);
+        document.getElementById('totalTaxes').textContent = formatCurrency(taxes);
+        document.getElementById('netSalary').textContent = formatCurrency(netSalary);
+
+        // Atualizar detalhamento dos impostos
+        document.getElementById('taxDetails').textContent = 
+            `Simples Nacional (6%): R$ ${formatCurrency(taxes)}
+Total de impostos: R$ ${formatCurrency(taxes)}`;
+
+        // Mostrar apenas elementos relevantes para PJ
+        document.querySelectorAll('.dollar-only').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.pj-only').forEach(el => el.style.display = 'block');
+        
+        // Mostrar resultado
+        document.getElementById('result').style.display = 'block';
+
     } catch (error) {
-        console.error('Erro ao obter cotação:', error);
-        return null;
+        console.error('Erro ao calcular salário PJ:', error);
+        alert('Erro ao calcular salário PJ. Por favor, tente novamente.');
     }
 }
 
-// Função para formatar números no padrão brasileiro
+// Função auxiliar para formatação de moeda
 function formatCurrency(value) {
     return value.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
