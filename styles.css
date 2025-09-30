@@ -202,10 +202,22 @@ pre {
 
     .button-group {
         flex-direction: column;
+        max-width: 100%;
     }
 
     button {
         width: 100%;
+        max-width: 100%;
+        min-width: auto;
+        padding: 12px;
+    }
+
+    .calc-button {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        padding: 12px;
+        margin: 5px 0;
     }
 
     .comparison-tables {
@@ -253,5 +265,30 @@ pre {
     .tax-details pre {
         font-size: 12px;
         white-space: pre-wrap;
+    }
+
+    .button-group button {
+        font-size: 14px;
+        padding: 10px;
+        margin: 5px 0;
+    }
+
+    .calc-container input,
+    .calc-container select {
+        max-width: 100%;
+    }
+
+    .calc-button {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .comparison-inputs {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .comparison-inputs .input-group {
+        max-width: 100%;
     }
 }
