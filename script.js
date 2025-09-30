@@ -1,31 +1,47 @@
 function showCalculator(type) {
+    console.log('Showing calculator:', type); // Debug
+
+    // Esconder tela de seleção
     document.getElementById('selectionScreen').style.display = 'none';
-    document.getElementById('dolarCalc').style.display = type === 'dolar' ? 'block' : 'none';
-    document.getElementById('pjCalc').style.display = type === 'pj' ? 'block' : 'none';
-    document.getElementById('cltCalc').style.display = type === 'clt' ? 'block' : 'none';
-    const compareEl = document.getElementById('compareCalc');
-    if (compareEl) {
-        compareEl.style.display = type === 'compare' ? 'block' : 'none';
-        if (type === 'compare') {
-            // garantir que a tela inicie limpa
-            clearComparison();
-        }
-    }
+
+    // Esconder todas as calculadoras
+    document.getElementById('dolarCalc').style.display = 'none';
+    document.getElementById('pjCalc').style.display = 'none';
+    document.getElementById('cltCalc').style.display = 'none';
+    document.getElementById('compareCalc').style.display = 'none';
     document.getElementById('result').style.display = 'none';
-    
-    const dollarFields = document.querySelectorAll('.dollar-only');
-    dollarFields.forEach(field => {
-        field.style.display = type === 'dolar' ? 'block' : 'none';
-    });
-    
+
+    // Mostrar calculadora selecionada
+    const selectedCalc = document.getElementById(type + 'Calc');
+    if (selectedCalc) {
+        selectedCalc.style.display = 'block';
+    }
+
+    // Limpar campos específicos
+    if (type === 'dolar') {
+        clearDollar();
+    } else if (type === 'pj') {
+        clearPJ();
+    } else if (type === 'clt') {
+        clearCLT();
+    } else if (type === 'compare') {
+        clearComparison();
+    }
+
     // Esconder todos os elementos específicos
-    document.querySelectorAll('.dollar-only, .pj-calculator-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.dollar-only, .pj-only').forEach(el => {
+        el.style.display = 'none';
+    });
     
     // Mostrar elementos específicos baseado no tipo
     if (type === 'dolar') {
-        document.querySelectorAll('.dollar-only').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.dollar-only').forEach(el => {
+            el.style.display = 'block';
+        });
     } else if (type === 'pj') {
-        document.querySelectorAll('.pj-calculator-only').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.pj-only').forEach(el => {
+            el.style.display = 'block';
+        });
     }
 }
 
@@ -78,7 +94,6 @@ function calcularIRRF(baseCalculo) {
 
 function calculatePJSalary() {
     try {
-        // Obter e validar inputs
         const salaryInput = document.getElementById('salaryPJ').value;
         const grossSalary = parseMoneyValue(salaryInput);
         const folhaPagamento = parseMoneyValue(document.getElementById('folhaPagamento')?.value || '0');
@@ -89,36 +104,24 @@ function calculatePJSalary() {
             return;
         }
 
-        // Calcular valores básicos
+        // Usar mesma lógica de cálculo
+        const receitaAnual = receitaBruta || grossSalary * 12;
+        const folhaPagamentoAnual = folhaPagamento || receitaAnual * 0.28;
         const hourlyRate = grossSalary / 176;
-        
-        // Calcular impostos baseado no regime
-        const regime = document.getElementById('regimePJ').value;
-        let totalTaxes, resultado;
 
-        if (regime === 'simples') {
-            resultado = calcularImpostoDevido(grossSalary, receitaBruta || grossSalary * 12, folhaPagamento || grossSalary);
-            totalTaxes = resultado.impostoDevido;
-        } else {
-            // Fallback para cálculo simples (6%)
-            totalTaxes = grossSalary * 0.06;
-            resultado = {
-                receitaBruta: grossSalary * 12,
-                fatorR: 0,
-                anexoAplicado: 'V',
-                aliquotaNominal: 0.06,
-                aliquotaEfetiva: 0.06,
-                impostoDevido: totalTaxes
-            };
-        }
+        const resultado = calcularImpostoDevido(
+            grossSalary,
+            receitaAnual,
+            folhaPagamentoAnual
+        );
 
-        const netSalary = grossSalary - totalTaxes;
+        const netSalary = grossSalary - resultado.impostoDevido;
 
         // Atualizar valores na tela
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
-        document.getElementById('convertedValue').textContent = formatCurrency(grossSalary);
         document.getElementById('pjHourly').textContent = formatCurrency(hourlyRate);
-        document.getElementById('totalTaxes').textContent = formatCurrency(totalTaxes);
+        document.getElementById('convertedValue').textContent = formatCurrency(grossSalary);
+        document.getElementById('totalTaxes').textContent = formatCurrency(resultado.impostoDevido);
         document.getElementById('netSalary').textContent = formatCurrency(netSalary);
 
         // Atualizar detalhamento dos impostos
@@ -126,16 +129,17 @@ function calculatePJSalary() {
 `Receita Bruta Anual: R$ ${formatCurrency(resultado.receitaBruta)}
 Fator R: ${(resultado.fatorR * 100).toFixed(2)}%
 Anexo Aplicado: ${resultado.anexoAplicado}
+Faixa de Faturamento: até R$ ${formatCurrency(resultado.faixaUtilizada.limite)}
 Alíquota Nominal: ${(resultado.aliquotaNominal * 100).toFixed(2)}%
+Valor da Dedução: R$ ${formatCurrency(resultado.faixaUtilizada.deducao)}
 Alíquota Efetiva: ${(resultado.aliquotaEfetiva * 100).toFixed(2)}%
 Imposto Devido: R$ ${formatCurrency(resultado.impostoDevido)}`;
 
-        // Mostrar resultado
         document.getElementById('result').style.display = 'block';
 
     } catch (error) {
         console.error('Erro ao calcular salário PJ:', error);
-        alert('Erro ao calcular salário PJ. Por favor, tente novamente.');
+        alert('Erro no cálculo. Verifique os valores informados.');
     }
 }
 
@@ -202,16 +206,19 @@ async function convertSalary() {
         const hourlyRate = salaryUSD / 176;
         const yearlyRate = salaryUSD * 12;
         const yearlyBRL = convertedValue * 12;
+        
+        // Usar mesma lógica do PJ
+        const receitaAnual = yearlyBRL;
+        const folhaPagamento = yearlyBRL * 0.28; // 28% para tentar Anexo III
 
-        // Usar o mesmo cálculo do PJ com Simples Nacional
+        // Calcular impostos usando a mesma função do PJ
         const resultado = calcularImpostoDevido(
-            convertedValue,          // valor mensal
-            yearlyBRL,              // receita bruta 12 meses
-            convertedValue * 0.28    // folha de pagamento mínima para Anexo III
+            convertedValue,    // valor mensal
+            receitaAnual,     // receita bruta 12 meses
+            folhaPagamento    // folha de pagamento 12 meses
         );
 
-        const totalTaxes = resultado.impostoDevido;
-        const netSalary = convertedValue - totalTaxes;
+        const netSalary = convertedValue - resultado.impostoDevido;
 
         // Atualizar valores na tela
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
@@ -220,15 +227,17 @@ async function convertSalary() {
         document.getElementById('hourlyUSD').textContent = formatCurrency(hourlyRate);
         document.getElementById('yearlyUSD').textContent = formatCurrency(yearlyRate);
         document.getElementById('convertedValue').textContent = formatCurrency(convertedValue);
-        document.getElementById('totalTaxes').textContent = formatCurrency(totalTaxes);
+        document.getElementById('totalTaxes').textContent = formatCurrency(resultado.impostoDevido);
         document.getElementById('netSalary').textContent = formatCurrency(netSalary);
 
-        // Atualizar detalhamento dos impostos
+        // Atualizar detalhamento dos impostos com mesmo formato do PJ
         document.getElementById('taxDetails').textContent = 
 `Receita Bruta Anual: R$ ${formatCurrency(resultado.receitaBruta)}
 Fator R: ${(resultado.fatorR * 100).toFixed(2)}%
 Anexo Aplicado: ${resultado.anexoAplicado}
+Faixa de Faturamento: até R$ ${formatCurrency(resultado.faixaUtilizada.limite)}
 Alíquota Nominal: ${(resultado.aliquotaNominal * 100).toFixed(2)}%
+Valor da Dedução: R$ ${formatCurrency(resultado.faixaUtilizada.deducao)}
 Alíquota Efetiva: ${(resultado.aliquotaEfetiva * 100).toFixed(2)}%
 Imposto Devido: R$ ${formatCurrency(resultado.impostoDevido)}`;
 

@@ -28,58 +28,90 @@ function determinarAnexo(fatorR) {
     return fatorR >= 0.28 ? ANEXO_III : ANEXO_V;
 }
 
+function encontrarFaixaCorreta(receitaBruta12Meses, faixas) {
+    // Garante que estamos usando a faixa correta mesmo com valores no limite
+    for (let i = 0; i < faixas.length; i++) {
+        if (receitaBruta12Meses <= faixas[i].limite) {
+            return faixas[i];
+        }
+    }
+    return faixas[faixas.length - 1]; // Última faixa para valores acima do limite
+}
+
 function calcularAliquotaEfetiva(receitaBruta12Meses, anexo) {
-    // Encontrar a faixa correta, considerando o limite máximo do Simples
     if (receitaBruta12Meses > 4800000) {
-        return 0.3350; // Alíquota máxima para empresas que ultrapassam o limite
+        return {
+            aliquota: 0.3350,
+            valorDeducao: 0,
+            efetiva: 0.3350
+        };
     }
 
-    const faixa = anexo.faixas.find((f, i) => 
-        receitaBruta12Meses <= f.limite || i === anexo.faixas.length - 1
-    );
-    
+    const faixa = encontrarFaixaCorreta(receitaBruta12Meses, anexo.faixas);
     const aliquotaEfetiva = (receitaBruta12Meses * faixa.aliquota - faixa.deducao) / receitaBruta12Meses;
-    return Math.min(aliquotaEfetiva, faixa.aliquota); // Garante que não ultrapasse a alíquota nominal
+    
+    return {
+        aliquota: faixa.aliquota,
+        valorDeducao: faixa.deducao,
+        efetiva: aliquotaEfetiva
+    };
 }
 
 function calcularImpostoDevido(valorMensal, receitaBruta12Meses, folhaPagamento12Meses) {
     try {
-        // Validar inputs
-        if (receitaBruta12Meses > 4800000) {
-            return {
-                receitaBruta: receitaBruta12Meses,
-                fatorR: 0,
-                anexoAplicado: 'Excedeu limite',
-                aliquotaNominal: 0.3350,
-                aliquotaEfetiva: 0.3350,
-                impostoDevido: valorMensal * 0.3350
-            };
+        // Validações de entrada
+        if (valorMensal <= 0 || receitaBruta12Meses <= 0) {
+            throw new Error('Valores devem ser maiores que zero');
         }
 
-        const fatorR = calcularFatorR(folhaPagamento12Meses, receitaBruta12Meses);
-        const anexo = determinarAnexo(fatorR);
-        const aliquotaEfetiva = calcularAliquotaEfetiva(receitaBruta12Meses, anexo);
+        // Cálculo do Fator R
+        const fatorR = folhaPagamento12Meses / receitaBruta12Meses;
+        const anexoAplicado = fatorR >= 0.28 ? ANEXO_III : ANEXO_V;
         
-        const faixaAtual = anexo.faixas.find(f => receitaBruta12Meses <= f.limite);
+        // Cálculo da alíquota
+        const calculo = calcularAliquotaEfetiva(receitaBruta12Meses, anexoAplicado);
         
+        // Log para debugging
+        console.log({
+            receitaAnual: receitaBruta12Meses,
+            fatorR: fatorR,
+            anexo: fatorR >= 0.28 ? 'III' : 'V',
+            aliquotaNominal: calculo.aliquota,
+            deducao: calculo.valorDeducao,
+            aliquotaEfetiva: calculo.efetiva
+        });
+
         return {
             receitaBruta: receitaBruta12Meses,
             fatorR: fatorR,
             anexoAplicado: fatorR >= 0.28 ? 'III' : 'V',
-            aliquotaNominal: faixaAtual.aliquota,
-            aliquotaEfetiva: aliquotaEfetiva,
-            impostoDevido: valorMensal * aliquotaEfetiva
+            aliquotaNominal: calculo.aliquota,
+            aliquotaEfetiva: calculo.efetiva,
+            impostoDevido: valorMensal * calculo.efetiva,
+            faixaUtilizada: encontrarFaixaCorreta(receitaBruta12Meses, anexoAplicado.faixas)
         };
     } catch (error) {
-        console.error('Erro no cálculo do imposto:', error);
-        // Retornar cálculo seguro em caso de erro
-        return {
-            receitaBruta: receitaBruta12Meses,
-            fatorR: 0,
-            anexoAplicado: 'Erro - usando alíquota máxima',
-            aliquotaNominal: 0.3350,
-            aliquotaEfetiva: 0.3350,
-            impostoDevido: valorMensal * 0.3350
-        };
+        console.error('Erro no cálculo:', error);
+        throw error;
     }
+}
+
+// Função auxiliar para validar cálculos
+function validarCalculos(valor) {
+    const testes = [
+        { mensal: 10000, anual: 120000 }, // Primeira faixa
+        { mensal: 20000, anual: 240000 }, // Segunda faixa
+        { mensal: 40000, anual: 480000 }, // Terceira faixa
+        { mensal: 100000, anual: 1200000 }, // Quarta faixa
+        { mensal: 200000, anual: 2400000 }, // Quinta faixa
+        { mensal: 350000, anual: 4200000 }  // Sexta faixa
+    ];
+
+    testes.forEach(teste => {
+        const resultadoIII = calcularImpostoDevido(teste.mensal, teste.anual, teste.anual * 0.30);
+        const resultadoV = calcularImpostoDevido(teste.mensal, teste.anual, teste.anual * 0.20);
+        console.log(`\nTeste para valor mensal: ${teste.mensal}`);
+        console.log('Anexo III:', resultadoIII);
+        console.log('Anexo V:', resultadoV);
+    });
 }
