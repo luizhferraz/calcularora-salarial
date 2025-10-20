@@ -311,12 +311,13 @@ function calculateCLTSalary() {
         const baseIRRF = grossSalary - inss;
         const irrf = calcularIRRF(baseIRRF);
         const fgts = grossSalary * 0.08;
-        const ferias = (grossSalary + (grossSalary / 3)) / 12; // Férias + 1/3
+        const ferias = (grossSalary + (grossSalary / 3)) / 12;
         const decimoTerceiro = grossSalary / 12;
         
         const liquidoCLT = grossSalary - inss - irrf;
         const beneficios = fgts + ferias + decimoTerceiro;
         const totalCLT = liquidoCLT + beneficios;
+        const salarioAnual = (totalCLT * 12) + grossSalary; // 12 meses + 13º
 
         // Atualizar valores na tela
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
@@ -332,7 +333,8 @@ FGTS (8%): R$ ${formatCurrency(fgts)}
 Férias + 1/3 (mensal): R$ ${formatCurrency(ferias)}
 13º Salário (mensal): R$ ${formatCurrency(decimoTerceiro)}
 Total Benefícios: R$ ${formatCurrency(beneficios)}
-Total Líquido + Benefícios: R$ ${formatCurrency(totalCLT)}`;
+Total Líquido + Benefícios: R$ ${formatCurrency(totalCLT)}
+Salário Anual (incluindo 13º): R$ ${formatCurrency(salarioAnual)}`;
 
         document.getElementById('result').style.display = 'block';
 
@@ -368,6 +370,7 @@ function compareRegimes() {
         const liquidoCLT = cltSalary - inss - irrf;
         const beneficios = fgts + ferias + decimoTerceiro;
         const totalCLT = liquidoCLT + beneficios;
+        const totalAnualCLT = (totalCLT * 12) + cltSalary; // 12 meses + 13º
 
         // Cálculos PJ usando Simples Nacional 2025
         const pjAnual = pjValue * 12;
@@ -392,6 +395,7 @@ function compareRegimes() {
         document.getElementById('clt_ferias').textContent = formatCurrency(ferias);
         document.getElementById('clt_beneficios').textContent = formatCurrency(beneficios);
         document.getElementById('clt_total').textContent = formatCurrency(totalCLT);
+        document.getElementById('clt_anual').textContent = formatCurrency(totalAnualCLT);
 
         // Atualizar tabela PJ com detalhamento do Simples Nacional 2025
         document.getElementById('pj_bruto').textContent = formatCurrency(pjValue);

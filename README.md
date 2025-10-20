@@ -45,6 +45,34 @@ Uma ferramenta web responsiva para cálculos e conversões salariais, incluindo 
 - Valor da dedução
 - Imposto devido
 
+### 3. Calculadora de Salário CLT
+- Cálculo do salário líquido CLT
+- INSS (tabela 2024)
+- IRRF (tabela 2024)
+- Detalhamento dos benefícios:
+  - FGTS mensal
+  - Férias + 1/3 mensalizados
+  - 13º salário mensal
+- Totalizadores:
+  - Total de benefícios mensais
+  - Salário líquido + benefícios
+  - Salário anual com 13º
+
+### 4. Comparativo CLT ↔ PJ
+- Comparação detalhada lado a lado
+- Valores CLT:
+  - Todos os descontos e benefícios
+  - Total mensal (líquido + benefícios)
+  - Total anual incluindo 13º
+- Valores PJ:
+  - Valor bruto
+  - Impostos (Simples Nacional)
+  - Valor líquido
+- Análise comparativa:
+  - Diferença mensal entre regimes
+  - Diferença anual entre regimes
+  - Indicação do regime mais vantajoso
+
 ## Desenvolvimento Técnico
 
 ### Melhorias Recentes
@@ -81,3 +109,13 @@ Uma ferramenta web responsiva para cálculos e conversões salariais, incluindo 
 ## Limitações
 - Cálculos baseados na legislação 2024/2025
 - Valor hora fixo em 176h mensais
+
+## Detalhes Técnicos
+
+### Cálculos Implementados
+- **CLT Anual**: 
+  - 12 × (Salário Líquido + Benefícios)
+  - Adicional do 13º salário bruto
+- **Comparativo Anual**:
+  - CLT: 12 meses + 13º
+  - PJ: 12 meses de receita líquida
