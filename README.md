@@ -25,6 +25,10 @@ Uma ferramenta web responsiva para cálculos e conversões salariais, incluindo 
   - Definição dinâmica do anexo (III ou V)
   - Alíquotas e deduções por faixa
   - Demonstrativo detalhado dos cálculos
+- Totalizadores:
+  - Valor hora
+  - Salário líquido mensal
+  - Salário líquido anual
 
 ### 3. Interface Responsiva
 - Layout adaptativo para diferentes dispositivos

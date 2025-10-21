@@ -116,6 +116,7 @@ function calculatePJSalary() {
         );
 
         const netSalary = grossSalary - resultado.impostoDevido;
+        const annualSalary = netSalary * 12;  // Calculando salário anual
 
         // Atualizar valores na tela
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
@@ -133,7 +134,8 @@ Faixa de Faturamento: até R$ ${formatCurrency(resultado.faixaUtilizada.limite)}
 Alíquota Nominal: ${(resultado.aliquotaNominal * 100).toFixed(2)}%
 Valor da Dedução: R$ ${formatCurrency(resultado.faixaUtilizada.deducao)}
 Alíquota Efetiva: ${(resultado.aliquotaEfetiva * 100).toFixed(2)}%
-Imposto Devido: R$ ${formatCurrency(resultado.impostoDevido)}`;
+Imposto Devido: R$ ${formatCurrency(resultado.impostoDevido)}
+Salário Líquido Anual: R$ ${formatCurrency(annualSalary)}`;
 
         document.getElementById('result').style.display = 'block';
 
@@ -384,6 +386,7 @@ function compareRegimes() {
         );
         
         const liquidoPJ = pjValue - resultado.impostoDevido;
+        const totalAnualPJ = liquidoPJ * 12; // 12 meses de receita líquida
 
         // Atualizar tabela CLT
         document.getElementById('clt_bruto').textContent = formatCurrency(cltSalary);
@@ -402,6 +405,7 @@ function compareRegimes() {
         document.getElementById('pj_simples').textContent = 
             `${formatCurrency(resultado.impostoDevido)} (${resultado.aliquotaEfetiva.toFixed(2)}% - Anexo ${resultado.anexoAplicado})`;
         document.getElementById('pj_liquido').textContent = formatCurrency(liquidoPJ);
+        document.getElementById('pj_anual').textContent = formatCurrency(totalAnualPJ);
 
         // Calcular e mostrar diferenças
         const difMensal = liquidoPJ - totalCLT;
@@ -434,8 +438,8 @@ function clearComparison() {
     const elements = [
         'clt_bruto', 'clt_inss', 'clt_irrf', 'clt_liquido', 
         'clt_fgts', 'clt_13', 'clt_ferias', 'clt_beneficios', 
-        'clt_total', 'pj_bruto', 'pj_simples', 'pj_liquido',
-        'diff_mensal', 'diff_anual'
+        'clt_total', 'clt_anual', 'pj_bruto', 'pj_simples', 
+        'pj_liquido', 'pj_anual', 'diff_mensal', 'diff_anual'
     ];
     
     elements.forEach(id => {
