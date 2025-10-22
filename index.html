@@ -7,167 +7,175 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Calculadora Salarial</h1>
+	<header>
+		<h1>Calculadora Salarial</h1>
+	</header>
 
-    <div id="selectionScreen">
-        <h2>Escolha o tipo de cálculo:</h2>
-        <button onclick="showCalculator('dolar')" class="calc-button">Converter Salário USD → BRL</button>
-        <button onclick="showCalculator('pj')" class="calc-button">Calcular Salário PJ Líquido</button>
-        <button onclick="showCalculator('clt')" class="calc-button">Calcular Salário CLT Líquido</button>
-        <button onclick="showCalculator('compare')" class="calc-button">Comparativo CLT ↔ PJ</button>
-    </div>
+	<main role="main">
+		<section id="selectionScreen" class="panel" aria-labelledby="selectTitle">
+			<h2 id="selectTitle">Escolha o tipo de cálculo:</h2>
+			<p class="lead">Selecione uma opção abaixo — toque para abrir a calculadora correspondente.</p>
 
-    <div id="dolarCalc" style="display: none;" class="calculator-screen">
-        <div class="calc-container">
-            <h2>Conversor de Salário (USD → BRL)</h2>
-            <div class="input-group">
-                <label for="salaryUSD">Salário Mensal em USD:</label>
-                <input type="text" id="salaryUSD" placeholder="0,00" maxlength="20" oninput="updateHourlyFromSalary()">
-            </div>
-            <div class="input-group">
-                <label for="hourlyUSDInput">Valor Hora em USD:</label>
-                <input type="text" id="hourlyUSDInput" placeholder="0,00" maxlength="20" oninput="updateSalaryFromHourly()">
-            </div>
-            <div class="button-group">
-                <button onclick="convertSalary()">Converter</button>
-                <button onclick="clearDollar()">Limpar</button>
-                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
-            </div>
-        </div>
-    </div>
+			<!-- botão: adicionar aria-label, role e título de ajuda -->
+			<button onclick="showCalculator('dolar')" class="calc-button" aria-label="Converter Salário em Dólar para Real" title="Converter USD para BRL">Converter Salário USD → BRL</button>
+			<button onclick="showCalculator('pj')" class="calc-button" aria-label="Calcular Salário PJ" title="Calcular PJ líquido">Calcular Salário PJ Líquido</button>
+			<button onclick="showCalculator('clt')" class="calc-button" aria-label="Calcular Salário CLT" title="Calcular CLT líquido">Calcular Salário CLT Líquido</button>
+			<button onclick="showCalculator('compare')" class="calc-button" aria-label="Comparativo CLT e PJ" title="Comparar CLT e PJ">Comparativo CLT ↔ PJ</button>
+		</section>
 
-    <div id="pjCalc" style="display: none;" class="calculator-screen">
-        <div class="calc-container">
-            <h2>Calculadora de Salário PJ</h2>
-            <div class="input-group">
-                <label for="salaryPJ">Valor Bruto Mensal (R$):</label>
-                <input type="text" id="salaryPJ" placeholder="0,00" maxlength="20" oninput="updatePJHourlyFromSalary()">
-            </div>
-            <div class="input-group">
-                <label for="hourlyPJInput">Valor Hora (R$):</label>
-                <input type="text" id="hourlyPJInput" placeholder="0,00" maxlength="20" oninput="updatePJSalaryFromHourly()">
-            </div>
-            <div class="input-group">
-                <label for="regimePJ">Regime Tributário:</label>
-                <select id="regimePJ">
-                    <option value="simples">Simples Nacional</option>
-                    <option value="presumido">Lucro Presumido</option>
-                    <option value="real">Lucro Real</option>
-                </select>
-            </div>
-            <div class="input-group simples-fields">
-                <label for="folhaPagamento">Folha de Pagamento 12 meses (R$):</label>
-                <input type="text" id="folhaPagamento" placeholder="0,00" maxlength="20">
-            </div>
-            <div class="input-group simples-fields">
-                <label for="receitaBruta">Receita Bruta 12 meses (R$):</label>
-                <input type="text" id="receitaBruta" placeholder="0,00" maxlength="20">
-            </div>
-            <div class="button-group">
-                <button onclick="calculatePJSalary()">Calcular</button>
-                <button onclick="clearPJ()">Limpar</button>
-                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
-            </div>
-        </div>
-    </div>
+		<div id="dolarCalc" style="display: none;" class="calculator-screen">
+			<div class="calc-container">
+				<h2>Conversor de Salário (USD → BRL)</h2>
+				<div class="input-group">
+					<label for="salaryUSD">Salário Mensal em USD:</label>
+					<input type="text" id="salaryUSD" placeholder="0,00" maxlength="20" oninput="updateHourlyFromSalary()" aria-describedby="salaryUSD_hint">
+					<small id="salaryUSD_hint" class="hint">Digite o valor mensal em dólares. Você pode usar vírgula para decimais.</small>
+				</div>
+				<div class="input-group">
+					<label for="hourlyUSDInput">Valor Hora em USD:</label>
+					<input type="text" id="hourlyUSDInput" placeholder="0,00" maxlength="20" oninput="updateSalaryFromHourly()">
+				</div>
+				<div class="button-group">
+					<button onclick="convertSalary()">Converter</button>
+					<button onclick="clearDollar()">Limpar</button>
+					<button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+				</div>
+			</div>
+		</div>
 
-    <div id="cltCalc" style="display: none;" class="calculator-screen">
-        <div class="calc-container">
-            <h2>Calculadora de Salário CLT</h2>
-            <div class="input-group">
-                <label for="salaryCLT">Salário Bruto Mensal (R$):</label>
-                <input type="text" id="salaryCLT" placeholder="0,00" maxlength="20">
-            </div>
-            <div class="button-group">
-                <button onclick="calculateCLTSalary()">Calcular</button>
-                <button onclick="clearCLT()">Limpar</button>
-                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
-            </div>
-        </div>
-    </div>
+		<div id="pjCalc" style="display: none;" class="calculator-screen">
+			<div class="calc-container">
+				<h2>Calculadora de Salário PJ</h2>
+				<div class="input-group">
+					<label for="salaryPJ">Valor Bruto Mensal (R$):</label>
+					<input type="text" id="salaryPJ" placeholder="0,00" maxlength="20" oninput="updatePJHourlyFromSalary()">
+				</div>
+				<div class="input-group">
+					<label for="hourlyPJInput">Valor Hora (R$):</label>
+					<input type="text" id="hourlyPJInput" placeholder="0,00" maxlength="20" oninput="updatePJSalaryFromHourly()">
+				</div>
+				<div class="input-group">
+					<label for="regimePJ">Regime Tributário:</label>
+					<select id="regimePJ">
+						<option value="simples">Simples Nacional</option>
+						<option value="presumido">Lucro Presumido</option>
+						<option value="real">Lucro Real</option>
+					</select>
+				</div>
+				<div class="input-group simples-fields">
+					<label for="folhaPagamento">Folha de Pagamento 12 meses (R$):</label>
+					<input type="text" id="folhaPagamento" placeholder="0,00" maxlength="20">
+				</div>
+				<div class="input-group simples-fields">
+					<label for="receitaBruta">Receita Bruta 12 meses (R$):</label>
+					<input type="text" id="receitaBruta" placeholder="0,00" maxlength="20">
+				</div>
+				<div class="button-group">
+					<button onclick="calculatePJSalary()">Calcular</button>
+					<button onclick="clearPJ()">Limpar</button>
+					<button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+				</div>
+			</div>
+		</div>
 
-    <div id="compareCalc" style="display: none;" class="calculator-screen">
-        <div class="calc-container">
-            <h2>Comparativo CLT ↔ PJ</h2>
-            <div class="comparison-inputs">
-                <div class="input-group">
-                    <label for="compareCLT">Salário CLT (R$):</label>
-                    <input type="text" id="compareCLT" placeholder="0,00" maxlength="20">
-                </div>
-                <div class="input-group">
-                    <label for="comparePJ">Valor PJ (R$):</label>
-                    <input type="text" id="comparePJ" placeholder="0,00" maxlength="20">
-                </div>
-            </div>
-            <div class="button-group">
-                <button onclick="compareRegimes()">Comparar</button>
-                <button onclick="clearComparison()">Limpar</button>
-                <button onclick="showSelectionScreen()" class="back-button">Voltar</button>
-            </div>
-            <div id="compareResults" style="display: none;" class="comparison-tables">
-                <div class="table-wrapper">
-                    <h3>CLT</h3>
-                    <table class="comparison-table">
-                        <tbody>
-                            <tr><th>Salário Bruto</th><td id="clt_bruto">-</td></tr>
-                            <tr><th>INSS</th><td id="clt_inss">-</td></tr>
-                            <tr><th>IRRF</th><td id="clt_irrf">-</td></tr>
-                            <tr><th>Salário Líquido</th><td id="clt_liquido">-</td></tr>
-                            <tr><th>FGTS (8%)</th><td id="clt_fgts">-</td></tr>
-                            <tr><th>13º (mensalizado)</th><td id="clt_13">-</td></tr>
-                            <tr><th>Férias + 1/3 (mensalizado)</th><td id="clt_ferias">-</td></tr>
-                            <tr><th>Total Benefícios</th><td id="clt_beneficios">-</td></tr>
-                            <tr class="row-strong"><th>Total (Líquido + Benefícios)</th><td id="clt_total">-</td></tr>
-                            <tr><th>Total Anual (com 13º)</th><td id="clt_anual">-</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="table-wrapper">
-                    <h3>PJ</h3>
-                    <table class="comparison-table">
-                        <tbody>
-                            <tr><th>Valor Bruto</th><td id="pj_bruto">-</td></tr>
-                            <tr><th>Simples (6%)</th><td id="pj_simples">-</td></tr>
-                            <tr class="row-strong"><th>Valor Líquido</th><td id="pj_liquido">-</td></tr>
-                            <tr><th>Total Anual</th><td id="pj_anual">-</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="compareSummary" style="display:none;" class="comparison-summary">
-                <p><strong>Diferença mensal:</strong> <span id="diff_mensal">-</span></p>
-                <p><strong>Diferença anual:</strong> <span id="diff_anual">-</span></p>
-            </div>
-        </div>
-    </div>
+		<div id="cltCalc" style="display: none;" class="calculator-screen">
+			<div class="calc-container">
+				<h2>Calculadora de Salário CLT</h2>
+				<div class="input-group">
+					<label for="salaryCLT">Salário Bruto Mensal (R$):</label>
+					<input type="text" id="salaryCLT" placeholder="0,00" maxlength="20">
+				</div>
+				<div class="button-group">
+					<button onclick="calculateCLTSalary()">Calcular</button>
+					<button onclick="clearCLT()">Limpar</button>
+					<button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+				</div>
+			</div>
+		</div>
 
-    <div id="result" class="result">
-        <h3>Resultado:</h3>
-        <p>Data do cálculo: <span id="currentDate"></span></p>
-        
-        <!-- Campos específicos do cálculo em dólar -->
-        <div class="dollar-only">
-            <p>Cotação do dólar: R$ <span id="exchangeRate"></span></p>
-            <p>Salário em dólares: USD <span id="originalValue"></span></p>
-            <p>Hora em dólares: USD <span id="hourlyUSD"></span></p>
-            <p>Salário anual em dólares: USD <span id="yearlyUSD"></span></p>
-        </div>
+		<div id="compareCalc" style="display: none;" class="calculator-screen">
+			<div class="calc-container">
+				<h2>Comparativo CLT ↔ PJ</h2>
+				<div class="comparison-inputs">
+					<div class="input-group">
+						<label for="compareCLT">Salário CLT (R$):</label>
+						<input type="text" id="compareCLT" placeholder="0,00" maxlength="20">
+					</div>
+					<div class="input-group">
+						<label for="comparePJ">Valor PJ (R$):</label>
+						<input type="text" id="comparePJ" placeholder="0,00" maxlength="20">
+					</div>
+				</div>
+				<div class="button-group">
+					<button onclick="compareRegimes()">Comparar</button>
+					<button onclick="clearComparison()">Limpar</button>
+					<button onclick="showSelectionScreen()" class="back-button">Voltar</button>
+				</div>
+				<div id="compareResults" style="display: none;" class="comparison-tables">
+					<div class="table-wrapper">
+						<h3>CLT</h3>
+						<table class="comparison-table">
+							<tbody>
+								<tr><th>Salário Bruto</th><td id="clt_bruto">-</td></tr>
+								<tr><th>INSS</th><td id="clt_inss">-</td></tr>
+								<tr><th>IRRF</th><td id="clt_irrf">-</td></tr>
+								<tr><th>Salário Líquido</th><td id="clt_liquido">-</td></tr>
+								<tr><th>FGTS (8%)</th><td id="clt_fgts">-</td></tr>
+								<tr><th>13º (mensalizado)</th><td id="clt_13">-</td></tr>
+								<tr><th>Férias + 1/3 (mensalizado)</th><td id="clt_ferias">-</td></tr>
+								<tr><th>Total Benefícios</th><td id="clt_beneficios">-</td></tr>
+								<tr class="row-strong"><th>Total (Líquido + Benefícios)</th><td id="clt_total">-</td></tr>
+								<tr><th>Total Anual (com 13º)</th><td id="clt_anual">-</td></tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="table-wrapper">
+						<h3>PJ</h3>
+						<table class="comparison-table">
+							<tbody>
+								<tr><th>Valor Bruto</th><td id="pj_bruto">-</td></tr>
+								<tr><th>Simples (6%)</th><td id="pj_simples">-</td></tr>
+								<tr class="row-strong"><th>Valor Líquido</th><td id="pj_liquido">-</td></tr>
+								<tr><th>Total Anual</th><td id="pj_anual">-</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div id="compareSummary" style="display:none;" class="comparison-summary">
+					<p><strong>Diferença mensal:</strong> <span id="diff_mensal">-</span></p>
+					<p><strong>Diferença anual:</strong> <span id="diff_anual">-</span></p>
+				</div>
+			</div>
+		</div>
 
-        <!-- Campos específicos do cálculo PJ -->
-        <div class="pj-only">
-            <p>Valor hora PJ: R$ <span id="pjHourly">-</span></p>
-        </div>
+		<div id="result" class="result">
+			<h3>Resultado:</h3>
+			<p>Data do cálculo: <span id="currentDate"></span></p>
+			
+			<!-- Campos específicos do cálculo em dólar -->
+			<div class="dollar-only">
+				<p>Cotação do dólar: R$ <span id="exchangeRate"></span></p>
+				<p>Salário em dólares: USD <span id="originalValue"></span></p>
+				<p>Hora em dólares: USD <span id="hourlyUSD"></span></p>
+				<p>Salário anual em dólares: USD <span id="yearlyUSD"></span></p>
+			</div>
 
-        <!-- Campos comuns -->
-        <p>Salário bruto em reais: R$ <span id="convertedValue"></span></p>
-        <p>Total de impostos: R$ <span id="totalTaxes"></span></p>
-        <p>Salário líquido: R$ <span id="netSalary"></span></p>
-        
-        <div class="tax-details">
-            <h4>Detalhamento dos Impostos:</h4>
-            <pre id="taxDetails"></pre>
-        </div>
-    </div>
+			<!-- Campos específicos do cálculo PJ -->
+			<div class="pj-only">
+				<p>Valor hora PJ: R$ <span id="pjHourly">-</span></p>
+			</div>
+
+			<!-- Campos comuns -->
+			<p>Salário bruto em reais: R$ <span id="convertedValue"></span></p>
+			<p>Total de impostos: R$ <span id="totalTaxes"></span></p>
+			<p>Salário líquido: R$ <span id="netSalary"></span></p>
+			
+			<div class="tax-details">
+				<h4>Detalhamento dos Impostos:</h4>
+				<pre id="taxDetails"></pre>
+			</div>
+		</div>
+	</main>
 
     <script defer src="simples-nacional.js"></script>
     <script defer src="script.js"></script>
