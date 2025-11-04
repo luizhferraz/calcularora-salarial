@@ -448,13 +448,41 @@ function clearComparison() {
 }
 
 async function getDollarRate() {
-    try {
-        const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
-        const data = await response.json();
-        return parseFloat(data.USDBRL.bid);
-    } catch (error) {
-        console.error('Erro ao obter cotação do dólar:', error);
-        alert('Não foi possível obter a cotação do dólar. Usando valor padrão de R$ 5,00');
-        return 5.00; // Valor fallback em caso de erro
+    const endpoints = [
+        {
+            url: 'https://economia.awesomeapi.com.br/last/USD-BRL',
+            parse: data => parseFloat(data?.USDBRL?.bid)
+        },
+        {
+            url: 'https://api.exchangerate.host/latest?base=USD&symbols=BRL',
+            parse: data => parseFloat(data?.rates?.BRL)
+        },
+        {
+            url: 'https://open.er-api.com/v6/latest/USD',
+            parse: data => parseFloat(data?.rates?.BRL)
+        }
+    ];
+
+    for (const ep of endpoints) {
+        try {
+            const resp = await fetch(ep.url, { cache: 'no-store' });
+            if (!resp.ok) {
+                console.warn(`API ${ep.url} respondeu com status ${resp.status}`);
+                continue;
+            }
+            const data = await resp.json();
+            const rate = ep.parse(data);
+            if (rate && !isNaN(rate)) {
+                console.info(`Cotação obtida de ${ep.url}: ${rate}`);
+                return rate;
+            } else {
+                console.warn(`Resposta inválida de ${ep.url}`, data);
+            }
+        } catch (err) {
+            console.warn(`Falha ao acessar ${ep.url}:`, err);
+        }
     }
+
+    console.error('Todas as tentativas de obter cotação falharam. Usando fallback R$ 5,00');
+    return 5.00; // fallback seguro
 }
