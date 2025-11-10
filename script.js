@@ -92,6 +92,48 @@ function calcularIRRF(baseCalculo) {
     }
 }
 
+// --- ADDED: função resiliente para obter cotação do dólar (fallbacks) ---
+async function getDollarRate() {
+	const endpoints = [
+		{
+			url: 'https://economia.awesomeapi.com.br/last/USD-BRL',
+			parse: data => parseFloat(data?.USDBRL?.bid)
+		},
+		{
+			url: 'https://api.exchangerate.host/latest?base=USD&symbols=BRL',
+			parse: data => parseFloat(data?.rates?.BRL)
+		},
+		{
+			url: 'https://open.er-api.com/v6/latest/USD',
+			parse: data => parseFloat(data?.rates?.BRL)
+		}
+	];
+
+	for (const ep of endpoints) {
+		try {
+			const resp = await fetch(ep.url, { cache: 'no-store' });
+			if (!resp.ok) {
+				console.warn(`API ${ep.url} respondeu com status ${resp.status}`);
+				continue;
+			}
+			const data = await resp.json();
+			const rate = ep.parse(data);
+			if (rate && !isNaN(rate)) {
+				console.info(`Cotação obtida de ${ep.url}: ${rate}`);
+				return rate;
+			} else {
+				console.warn(`Resposta inválida de ${ep.url}`, data);
+			}
+		} catch (err) {
+			console.warn(`Falha ao acessar ${ep.url}:`, err);
+		}
+	}
+
+	console.error('Todas as tentativas de obter cotação falharam. Usando fallback R$ 5,00');
+	return 5.00; // fallback seguro
+}
+
+// Função para calcular salário PJ
 function calculatePJSalary() {
     try {
         const salaryInput = document.getElementById('salaryPJ').value;
@@ -109,11 +151,17 @@ function calculatePJSalary() {
         const folhaPagamentoAnual = folhaPagamento || receitaAnual * 0.28;
         const hourlyRate = grossSalary / 176;
 
-        const resultado = calcularImpostoDevido(
-            grossSalary,
-            receitaAnual,
-            folhaPagamentoAnual
-        );
+        let resultado;
+		if (typeof calcularImpostoDevido === 'function') {
+			resultado = calcularImpostoDevido(
+				grossSalary,
+				receitaAnual,
+				folhaPagamentoAnual
+			);
+		} else {
+			console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+			resultado = impostoFallbackMensal(grossSalary);
+		}
 
         const netSalary = grossSalary - resultado.impostoDevido;
         const annualSalary = netSalary * 12;  // Calculando salário anual
@@ -214,11 +262,17 @@ async function convertSalary() {
         const folhaPagamento = yearlyBRL * 0.28; // 28% para tentar Anexo III
 
         // Calcular impostos usando a mesma função do PJ
-        const resultado = calcularImpostoDevido(
-            convertedValue,    // valor mensal
-            receitaAnual,     // receita bruta 12 meses
-            folhaPagamento    // folha de pagamento 12 meses
-        );
+        let resultado;
+		if (typeof calcularImpostoDevido === 'function') {
+			resultado = calcularImpostoDevido(
+				convertedValue,    // valor mensal em R$
+				receitaAnual,      // receita bruta 12 meses
+				folhaPagamento     // folha de pagamento 12 meses
+			);
+		} else {
+			console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+			resultado = impostoFallbackMensal(convertedValue);
+		}
 
         const netSalary = convertedValue - resultado.impostoDevido;
 
@@ -379,45 +433,76 @@ function compareRegimes() {
         const folhaPagamento = pjAnual * 0.28; // 28% para tentar enquadramento no Anexo III
 
         // Usar a nova função de cálculo do Simples Nacional 2025
-        const resultado = calcularImpostoDevido(
-            pjValue,           // valor mensal
-            pjAnual,          // receita bruta 12 meses
-            folhaPagamento    // folha de pagamento 12 meses
-        );
+        let resultado;
+		if (typeof calcularImpostoDevido === 'function') {
+			resultado = calcularImpostoDevido(
+				pjValue,           // valor mensal
+				pjAnual,          // receita bruta 12 meses
+				folhaPagamento    // folha de pagamento 12 meses
+			);
+		} else {
+			console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+			resultado = impostoFallbackMensal(pjValue);
+		}
         
         const liquidoPJ = pjValue - resultado.impostoDevido;
         const totalAnualPJ = liquidoPJ * 12; // 12 meses de receita líquida
 
-        // Atualizar tabela CLT
-        document.getElementById('clt_bruto').textContent = formatCurrency(cltSalary);
-        document.getElementById('clt_inss').textContent = formatCurrency(inss);
-        document.getElementById('clt_irrf').textContent = formatCurrency(irrf);
-        document.getElementById('clt_liquido').textContent = formatCurrency(liquidoCLT);
-        document.getElementById('clt_fgts').textContent = formatCurrency(fgts);
-        document.getElementById('clt_13').textContent = formatCurrency(decimoTerceiro);
-        document.getElementById('clt_ferias').textContent = formatCurrency(ferias);
-        document.getElementById('clt_beneficios').textContent = formatCurrency(beneficios);
-        document.getElementById('clt_total').textContent = formatCurrency(totalCLT);
-        document.getElementById('clt_anual').textContent = formatCurrency(totalAnualCLT);
+        // Critério de escolha: usar percentual configurável (em %) ou fallback para 38%
+        const defaultThresholdPercent = 38; // sugestão: usar 38% por padrão
+        const inputPercent = parseFloat(document.getElementById('pjThreshold')?.value?.replace(',', '.'));
+        const thresholdPercent = (!isNaN(inputPercent) && inputPercent >= 0) ? inputPercent : defaultThresholdPercent;
+        const thresholdFactor = 1 + (thresholdPercent / 100);
+
+        const thresholdMonthly = totalCLT * thresholdFactor;
+        const meetsThreshold = liquidoPJ >= thresholdMonthly;
+        const gapMonthly = meetsThreshold ? 0 : thresholdMonthly - liquidoPJ;
+        const gapPercent = meetsThreshold ? 0 : (gapMonthly / thresholdMonthly) * 100;
+
+        // Atualizar tabela CLT (uso helpers seguros)
+        safeSetText('clt_bruto', formatCurrency(cltSalary));
+        safeSetText('clt_inss', formatCurrency(inss));
+        safeSetText('clt_irrf', formatCurrency(irrf));
+        safeSetText('clt_liquido', formatCurrency(liquidoCLT));
+        safeSetText('clt_fgts', formatCurrency(fgts));
+        safeSetText('clt_13', formatCurrency(decimoTerceiro));
+        safeSetText('clt_ferias', formatCurrency(ferias));
+        safeSetText('clt_beneficios', formatCurrency(beneficios));
+        safeSetText('clt_total', formatCurrency(totalCLT));
+        safeSetText('clt_anual', formatCurrency(totalAnualCLT));
 
         // Atualizar tabela PJ com detalhamento do Simples Nacional 2025
-        document.getElementById('pj_bruto').textContent = formatCurrency(pjValue);
-        document.getElementById('pj_simples').textContent = 
-            `${formatCurrency(resultado.impostoDevido)} (${resultado.aliquotaEfetiva.toFixed(2)}% - Anexo ${resultado.anexoAplicado})`;
-        document.getElementById('pj_liquido').textContent = formatCurrency(liquidoPJ);
-        document.getElementById('pj_anual').textContent = formatCurrency(totalAnualPJ);
+        safeSetText('pj_bruto', formatCurrency(pjValue));
+        safeSetText('pj_simples', `${formatCurrency(resultado.impostoDevido)} (${resultado.aliquotaEfetiva.toFixed(2)}% - Anexo ${resultado.anexoAplicado})`);
+        safeSetText('pj_liquido', formatCurrency(liquidoPJ));
+        safeSetText('pj_anual', formatCurrency(totalAnualPJ));
 
         // Calcular e mostrar diferenças
         const difMensal = liquidoPJ - totalCLT;
         const difAnual = difMensal * 12;
 
-        document.getElementById('diff_mensal').textContent = 
-            `${formatCurrency(difMensal)} ${difMensal > 0 ? '(favorável ao PJ)' : '(favorável ao CLT)'}`;
-        document.getElementById('diff_anual').textContent = formatCurrency(difAnual);
+        safeSetText('diff_mensal', formatCurrency(difMensal));
+        safeSetText('diff_anual', formatCurrency(difAnual));
+
+        // Recomendação considerando o fator configurável (ex.: 38%)
+        const recommendationEl = document.getElementById('compareSummary');
+        let recommendationText = '';
+        if (meetsThreshold) {
+            recommendationText = `<p style="margin:6px 0; color:green;"><strong>Recomendação:</strong> PJ atende ao critério (≥ ${thresholdPercent.toFixed(0)}% do total CLT). PJ recomendado.</p>`;
+        } else {
+            recommendationText = `<p style="margin:6px 0; color:#b35300;"><strong>Recomendação:</strong> PJ não atende ao critério de +${thresholdPercent.toFixed(0)}%. Faltam R$ ${formatCurrency(gapMonthly)} (${gapPercent.toFixed(2)}%) por mês para atingir o limiar de R$ ${formatCurrency(thresholdMonthly)}.</p>`;
+        }
+        recommendationText += `<p style="margin:6px 0; font-size:0.95em;">(Critério aplicado: PJ precisa ser ≥ ${thresholdPercent.toFixed(0)}% do Total CLT para ser considerado vantajoso)</p>`;
+
+        if (recommendationEl) {
+            recommendationEl.style.display = 'block';
+            recommendationEl.innerHTML = recommendationText;
+        } else {
+            console.warn('Elemento compareSummary não encontrado; recomendação não exibida.');
+        }
 
         // Mostrar resultados
-        document.getElementById('compareResults').style.display = 'block';
-        document.getElementById('compareSummary').style.display = 'block';
+        safeShow('compareResults', true);
 
     } catch (error) {
         console.error('Erro ao comparar regimes:', error);
@@ -425,14 +510,62 @@ function compareRegimes() {
     }
 }
 
+// --- LIGHTWEIGHT FALLBACK helpers para imposto quando calcularImpostoDevido não existir ---
+// retorna um objeto com a mesma shape mínima esperada pelo restante do código
+function impostoFallbackMensal(valorMensal) {
+	// tenta usar calculateSimplesTax se existir, senão aplica alíquota fixa de 6%
+	if (typeof calculateSimplesTax === 'function') {
+		const t = calculateSimplesTax(valorMensal);
+		return {
+			impostoDevido: t.tax,
+			receitaBruta: t.annualRevenue,
+			fatorR: 0,
+			anexoAplicado: '-',
+			aliquotaNominal: t.effectiveRate / 100,
+			aliquotaEfetiva: t.effectiveRate / 100,
+			faixaUtilizada: { limite: t.annualRevenue, deducao: 0 }
+		};
+	}
+	const imposto = valorMensal * 0.06;
+	return {
+		impostoDevido: imposto,
+		receitaBruta: valorMensal * 12,
+		fatorR: 0,
+		anexoAplicado: '-',
+		aliquotaNominal: 0.06,
+		aliquotaEfetiva: 0.06,
+		faixaUtilizada: { limite: valorMensal * 12, deducao: 0 }
+	};
+}
+
+// Helpers seguros para DOM (evitam "Cannot set properties of null")
+function safeSetText(id, value) {
+	const el = document.getElementById(id);
+	if (el) el.textContent = value;
+	else console.warn(`Elemento não encontrado: ${id}`);
+}
+function safeSetHTML(id, html) {
+	const el = document.getElementById(id);
+	if (el) el.innerHTML = html;
+	else console.warn(`Elemento não encontrado: ${id}`);
+}
+function safeShow(id, flag) {
+	const el = document.getElementById(id);
+	if (el) el.style.display = flag ? 'block' : 'none';
+	else console.warn(`Elemento não encontrado: ${id}`);
+}
+
 function clearComparison() {
     // Limpar inputs
-    document.getElementById('compareCLT').value = '';
-    document.getElementById('comparePJ').value = '';
+    safeSetText('compareCLT',''); // direct inputs are fields, keep them empty via element access
+    const cltInput = document.getElementById('compareCLT');
+    if (cltInput) cltInput.value = '';
+    const pjInput = document.getElementById('comparePJ');
+    if (pjInput) pjInput.value = '';
 
     // Esconder resultados
-    document.getElementById('compareResults').style.display = 'none';
-    document.getElementById('compareSummary').style.display = 'none';
+    safeShow('compareResults', false);
+    safeShow('compareSummary', false);
 
     // Resetar valores das tabelas
     const elements = [
@@ -443,46 +576,7 @@ function clearComparison() {
     ];
     
     elements.forEach(id => {
-        document.getElementById(id).textContent = '-';
+        const el = document.getElementById(id);
+        if (el) el.textContent = '-';
     });
-}
-
-async function getDollarRate() {
-    const endpoints = [
-        {
-            url: 'https://economia.awesomeapi.com.br/last/USD-BRL',
-            parse: data => parseFloat(data?.USDBRL?.bid)
-        },
-        {
-            url: 'https://api.exchangerate.host/latest?base=USD&symbols=BRL',
-            parse: data => parseFloat(data?.rates?.BRL)
-        },
-        {
-            url: 'https://open.er-api.com/v6/latest/USD',
-            parse: data => parseFloat(data?.rates?.BRL)
-        }
-    ];
-
-    for (const ep of endpoints) {
-        try {
-            const resp = await fetch(ep.url, { cache: 'no-store' });
-            if (!resp.ok) {
-                console.warn(`API ${ep.url} respondeu com status ${resp.status}`);
-                continue;
-            }
-            const data = await resp.json();
-            const rate = ep.parse(data);
-            if (rate && !isNaN(rate)) {
-                console.info(`Cotação obtida de ${ep.url}: ${rate}`);
-                return rate;
-            } else {
-                console.warn(`Resposta inválida de ${ep.url}`, data);
-            }
-        } catch (err) {
-            console.warn(`Falha ao acessar ${ep.url}:`, err);
-        }
-    }
-
-    console.error('Todas as tentativas de obter cotação falharam. Usando fallback R$ 5,00');
-    return 5.00; // fallback seguro
 }
