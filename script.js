@@ -356,6 +356,10 @@ function calculateCLTSalary() {
     try {
         const salaryInput = document.getElementById('salaryCLT').value;
         const grossSalary = parseMoneyValue(salaryInput);
+
+        // Ler novos campos opcionais
+        const valeAlimentacao = parseMoneyValue(document.getElementById('valeAlimentacao')?.value || '0');
+        const outrosBeneficios = parseMoneyValue(document.getElementById('outrosBeneficios')?.value || '0');
         
         if (isNaN(grossSalary) || grossSalary <= 0) {
             alert('Por favor, insira um valor válido');
@@ -370,10 +374,17 @@ function calculateCLTSalary() {
         const ferias = (grossSalary + (grossSalary / 3)) / 12;
         const decimoTerceiro = grossSalary / 12;
         
-        const liquidoCLT = grossSalary - inss - irrf;
-        const beneficios = fgts + ferias + decimoTerceiro;
+        // Salário líquido sem os campos opcionais
+        let liquidoCLT = grossSalary - inss - irrf;
+
+        // Somar os valores opcionais diretamente ao líquido (não alteram INSS/IRRF)
+        liquidoCLT += valeAlimentacao + outrosBeneficios;
+
+        const beneficios = fgts + ferias + decimoTerceiro; // continua sendo benefícios calculados
         const totalCLT = liquidoCLT + beneficios;
-        const salarioAnual = (totalCLT * 12) + grossSalary; // 12 meses + 13º
+
+        // Salário anual: 12x (líquido + benefícios) + 13º bruto
+        const salarioAnual = (totalCLT * 12) + grossSalary; // mantém 13º como salário bruto adicional
 
         // Atualizar valores na tela
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR');
@@ -381,14 +392,16 @@ function calculateCLTSalary() {
         document.getElementById('totalTaxes').textContent = formatCurrency(inss + irrf);
         document.getElementById('netSalary').textContent = formatCurrency(liquidoCLT);
 
-        // Atualizar detalhamento dos impostos
+        // Atualizar detalhamento dos impostos e itens opcionais
         document.getElementById('taxDetails').textContent = 
 `INSS (${((inss/grossSalary)*100).toFixed(2)}%): R$ ${formatCurrency(inss)}
 IRRF (${((irrf/grossSalary)*100).toFixed(2)}%): R$ ${formatCurrency(irrf)}
 FGTS (8%): R$ ${formatCurrency(fgts)}
 Férias + 1/3 (mensal): R$ ${formatCurrency(ferias)}
 13º Salário (mensal): R$ ${formatCurrency(decimoTerceiro)}
-Total Benefícios: R$ ${formatCurrency(beneficios)}
+Vale Alimentação (mensal): R$ ${formatCurrency(valeAlimentacao)}
+Outros Benefícios (mensal): R$ ${formatCurrency(outrosBeneficios)}
+Total Benefícios (FGTS + férias + 13º mensalizado): R$ ${formatCurrency(beneficios)}
 Total Líquido + Benefícios: R$ ${formatCurrency(totalCLT)}
 Salário Anual (incluindo 13º): R$ ${formatCurrency(salarioAnual)}`;
 
@@ -401,7 +414,13 @@ Salário Anual (incluindo 13º): R$ ${formatCurrency(salarioAnual)}`;
 }
 
 function clearCLT() {
-    document.getElementById('salaryCLT').value = '';
+    // limpar novo campos também
+    const salaryEl = document.getElementById('salaryCLT');
+    if (salaryEl) salaryEl.value = '';
+    const valeEl = document.getElementById('valeAlimentacao');
+    if (valeEl) valeEl.value = '';
+    const outrosEl = document.getElementById('outrosBeneficios');
+    if (outrosEl) outrosEl.value = '';
     document.getElementById('result').style.display = 'none';
 }
 
