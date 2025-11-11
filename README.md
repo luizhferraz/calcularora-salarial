@@ -1,125 +1,73 @@
 # Calculadora Salarial
 
-Uma ferramenta web responsiva para cálculos e conversões salariais, incluindo comparativos entre regimes CLT e PJ.
+Ferramenta web responsiva para cálculos e comparativos salariais (CLT ↔ PJ) com suporte a conversão USD → BRL.
 
-## Funcionalidades
+Resumo das principais funcionalidades (últimas alterações)
+- Conversor USD → BRL com cotação em tempo real (vários endpoints e fallback).
+- Calculadora PJ:
+  - Entrada por valor mensal ou hora.
+  - Campos opcionais para Folha de Pagamento 12 meses e Receita Bruta 12 meses.
+  - Cálculo de imposto via regras do Simples Nacional (arquivo simples-nacional.js).
+  - Exibe alíquota nominal, alíquota efetiva, faixa utilizada, fator R e imposto devido.
+  - Exibe Salário Líquido Mensal e Salário Líquido Anual.
+  - Se simples-nacional.js não estiver disponível, usa fallback (calculateSimplesTax ou alíquota fixa 6%).
+- Calculadora CLT:
+  - INSS e IRRF (tabelas 2024).
+  - Cálculo de FGTS, férias (mensalizado) e 13º (mensalizado).
+  - Novos campos opcionais (não obrigatórios):
+    - Vale Alimentação (mensal)
+    - Outros Benefícios (mensal)
+  - Esses valores opcionais são somados ao salário líquido mensal e ao salário anual (não afetam INSS/IRRF).
+- Comparativo CLT ↔ PJ:
+  - Mostra valores mensais e anuais (CLT: inclui 13º; PJ: 12 meses de líquido).
+  - Exibe detalhamento de impostos de ambos os regimes.
+  - Regra de recomendação configurável:
+    - Por padrão PJ é considerado vantajoso se o líquido mensal PJ for ≥ 38% (valor padrão) do Total (Líquido + Benefícios) do CLT.
+    - Percentual configurável via input opcional com id `pjThreshold` (valor em %). Se presente, usa esse percentual em vez do default.
+  - Mostra diferença mensal/anual e mensagem clara sobre recomendação e quanto falta para atingir o limiar.
 
-### 1. Conversor de Salário (USD → BRL)
-- Conversão de salários de dólar para real usando cotação atual
-- Input flexível: valor mensal ou valor hora
-- Cotação do dólar em tempo real via API
-- Exibição detalhada:
-  - Valores em dólar (mensal, hora, anual)
-  - Valores convertidos em reais
-  - Cálculo automático dos impostos
-  - Demonstrativo completo do Simples Nacional
+UI / UX e responsividade
+- Layout responsivo com media-queries (breakpoints 768px e 480px).
+- Botões com estilo "pill" (arredondados), com foco e hover melhorados.
+- Painel principal com cards e hints (small.hint) para inputs importantes.
+- Resultados separados por tipo (campos específicos para dólar e PJ/CLT) para evitar confusão.
 
-### 2. Calculadora de Salário PJ
-- Cálculo do salário líquido PJ com interface dedicada
-- Input por salário mensal ou valor hora
-- Campos adicionais para:
-  - Folha de Pagamento 12 meses
-  - Receita Bruta 12 meses
-- Suporte ao Simples Nacional 2025:
-  - Cálculo automático do Fator R
-  - Definição dinâmica do anexo (III ou V)
-  - Alíquotas e deduções por faixa
-  - Demonstrativo detalhado dos cálculos
-- Totalizadores:
-  - Valor hora
-  - Salário líquido mensal
-  - Salário líquido anual
+Resiliência e fallback
+- Função `getDollarRate()` tenta múltiplos endpoints (awesomeapi, exchangerate.host, open.er-api) e retorna fallback R$ 5,00 se todas falharem.
+- Ao detectar ausência de `calcularImpostoDevido` (por exemplo se simples-nacional.js não carregar), o app usa um `impostoFallbackMensal()` que tenta `calculateSimplesTax()` ou aplica alíquota fixa de 6% como último recurso.
+- Logs no console informam quando fallbacks são usados; evitar alerts intrusivos.
 
-### 3. Interface Responsiva
-- Layout adaptativo para diferentes dispositivos
-- Visualização otimizada para mobile
-- Separação clara entre:
-  - Campos específicos do dólar
-  - Campos específicos do PJ
-  - Resultados comuns
-- Botões e campos redimensionados para touch
+Campos novos e IDs relevantes
+- CLT:
+  - `salaryCLT` — salário bruto mensal
+  - `valeAlimentacao` — vale alimentação (mensal, opcional)
+  - `outrosBeneficios` — outros benefícios (mensal, opcional)
+- PJ:
+  - `salaryPJ`, `hourlyPJInput`, `regimePJ`, `folhaPagamento`, `receitaBruta`
+- Conversor USD:
+  - `salaryUSD`, `hourlyUSDInput`
+- Comparativo:
+  - `compareCLT`, `comparePJ`
+  - `pjThreshold` — opcional, percentual (em %) para limiar de comparação
+  - `compareResults`, `compareSummary` — áreas de resultado
 
-### 4. Detalhamento de Impostos
-#### Simples Nacional 2025
-- Exibição da Receita Bruta Anual
-- Fator R calculado
-- Anexo aplicado (III ou V)
-- Faixa de faturamento
-- Alíquota nominal e efetiva
-- Valor da dedução
-- Imposto devido
+Notas de implementação e operação
+- Certifique-se de incluir `simples-nacional.js` antes de `script.js` (ou ambos com `defer` e ordem correta) para usar a implementação completa do Simples Nacional.
+- Testes sugeridos:
+  - Valores limítrofes das faixas do Simples Nacional (ex.: 180k, 360k, 720k, 1.8M, 3.6M).
+  - Comparativo com e sem `pjThreshold` especificado.
+  - Conversor USD testando falha de API (desligar rede ou simular CORS) para validar fallback.
+- Formatação: valores exibidos no padrão pt-BR (R$ 1.234,56).
 
-### 3. Calculadora de Salário CLT
-- Cálculo do salário líquido CLT
-- INSS (tabela 2024)
-- IRRF (tabela 2024)
-- Detalhamento dos benefícios:
-  - FGTS mensal
-  - Férias + 1/3 mensalizados
-  - 13º salário mensal
-- Totalizadores:
-  - Total de benefícios mensais
-  - Salário líquido + benefícios
-  - Salário anual com 13º
+Próximas melhorias recomendadas
+- Máscaras de entrada (monetárias) para todos os inputs.
+- Input para ajustar o fator R real no comparativo (usar folha informada).
+- Exportar resultados (PDF/CSV).
+- Indicador visual de "fallback" no UI para avisar quando cotação ou cálculo de imposto usou fallback.
 
-### 4. Comparativo CLT ↔ PJ
-- Comparação detalhada lado a lado
-- Valores CLT:
-  - Todos os descontos e benefícios
-  - Total mensal (líquido + benefícios)
-  - Total anual incluindo 13º
-- Valores PJ:
-  - Valor bruto
-  - Impostos (Simples Nacional)
-  - Valor líquido
-- Análise comparativa:
-  - Diferença mensal entre regimes
-  - Diferença anual entre regimes
-  - Indicação do regime mais vantajoso
-
-## Desenvolvimento Técnico
-
-### Melhorias Recentes
-1. Separação de componentes por tipo de cálculo
-2. Correção do cálculo de impostos PJ
-3. Interface mais intuitiva
-4. Melhor organização do código
-5. Tratamento de erros aprimorado
-
-### Estrutura do Projeto
-- HTML5 semântico
-- CSS3 com media queries
-- JavaScript modular
-- Integração com API de cotação
-
-### Próximas Atualizações
-- Exportação de resultados
-- Modo escuro
-- Armazenamento local de configurações
-- Comparativos mais detalhados
-
-## Como Usar
-
-1. Escolha o tipo de cálculo
-2. Preencha os valores solicitados
-3. Para cálculos PJ:
-   - Informe salário ou valor hora
-   - Opcionalmente, informe folha e receita
-4. Para conversão USD:
-   - Informe valor em dólar
-   - Aguarde cotação atual
-5. Visualize o resultado detalhado
-
-## Limitações
-- Cálculos baseados na legislação 2024/2025
-- Valor hora fixo em 176h mensais
-
-## Detalhes Técnicos
-
-### Cálculos Implementados
-- **CLT Anual**: 
-  - 12 × (Salário Líquido + Benefícios)
-  - Adicional do 13º salário bruto
-- **Comparativo Anual**:
-  - CLT: 12 meses + 13º
-  - PJ: 12 meses de receita líquida
+Contato e manutenção
+- Arquivos chave:
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/index.html
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/styles.css
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/script.js
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/simples-nacional.js
