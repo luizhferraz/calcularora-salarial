@@ -66,8 +66,9 @@ Próximas melhorias recomendadas
 - Exportação de resultados (PDF/CSV).
 - Indicador visual de "fallback" no UI para mostrar quando a cotação ou o cálculo de imposto usou fallback.
 
-Arquivos relevantes
-- index.html — estrutura e inputs
-- styles.css — estilos e responsividade
-- script.js — lógica da UI, cálculos de CLT/PJ/Conversor/Comparativo, fallbacks
-- simples-nacional.js — regras do Simples Nacional (anexo/intervalos/álcotas)
+Contato e manutenção
+- Arquivos chave:
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/index.html
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/styles.css
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/script.js
+  - /Users/luizferraz/Documents/labs/calcularora-salarial/simples-nacional.js
