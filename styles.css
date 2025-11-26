@@ -375,3 +375,15 @@ pre {
         max-width: 100%;
     }
 }
+
+/* Aviso quando Anexo V ou fallback for aplicado */
+.anexo-warning {
+    display: none;
+    background: #fff4e5; /* suave amarelo */
+    border: 1px solid #ffd59e;
+    color: #8a5316;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 14px;
+}

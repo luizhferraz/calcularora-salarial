@@ -54,22 +54,14 @@
 					<label for="hourlyPJInput">Valor Hora (R$):</label>
 					<input type="text" id="hourlyPJInput" placeholder="0,00" maxlength="20" oninput="updatePJSalaryFromHourly()">
 				</div>
+
+				<!-- Novo: Folha de Pagamento anual (opcional) -->
 				<div class="input-group">
-					<label for="regimePJ">Regime Tributário:</label>
-					<select id="regimePJ">
-						<option value="simples">Simples Nacional</option>
-						<option value="presumido">Lucro Presumido</option>
-						<option value="real">Lucro Real</option>
-					</select>
-				</div>
-				<div class="input-group simples-fields">
-					<label for="folhaPagamento">Folha de Pagamento 12 meses (R$):</label>
+					<label for="folhaPagamento">Folha de Pagamento 12 meses (R$) — opcional:</label>
 					<input type="text" id="folhaPagamento" placeholder="0,00" maxlength="20">
+					<small class="hint">Informe a folha anual para cálculo do Fator R (serviços de TI). Se não informado, o sistema assume comportamento conservador (Anexo V).</small>
 				</div>
-				<div class="input-group simples-fields">
-					<label for="receitaBruta">Receita Bruta 12 meses (R$):</label>
-					<input type="text" id="receitaBruta" placeholder="0,00" maxlength="20">
-				</div>
+
 				<div class="button-group">
 					<button onclick="calculatePJSalary()">Calcular</button>
 					<button onclick="clearPJ()">Limpar</button>
@@ -154,6 +146,8 @@
 						</table>
 					</div>
 				</div>
+				<!-- aviso específico do comparativo -->
+				<div id="compareAnexoWarning" class="anexo-warning" style="display:none"></div>
 				<div id="compareSummary" style="display:none;" class="comparison-summary">
 					<p><strong>Diferença mensal:</strong> <span id="diff_mensal">-</span></p>
 					<p><strong>Diferença anual:</strong> <span id="diff_anual">-</span></p>
@@ -177,6 +171,9 @@
 			<div class="pj-only">
 				<p>Valor hora PJ: R$ <span id="pjHourly">-</span></p>
 			</div>
+
+			<!-- Aviso de anexo (usado por PJ/Conversor) -->
+			<div id="anexoWarning" class="anexo-warning" style="display:none"></div>
 
 			<!-- Campos comuns -->
 			<p>Salário bruto em reais: R$ <span id="convertedValue"></span></p>

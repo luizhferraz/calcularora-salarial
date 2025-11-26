@@ -138,8 +138,6 @@ function calculatePJSalary() {
     try {
         const salaryInput = document.getElementById('salaryPJ').value;
         const grossSalary = parseMoneyValue(salaryInput);
-        const folhaPagamento = parseMoneyValue(document.getElementById('folhaPagamento')?.value || '0');
-        const receitaBruta = parseMoneyValue(document.getElementById('receitaBruta')?.value || '0');
         
         if (isNaN(grossSalary) || grossSalary <= 0) {
             alert('Por favor, insira um valor válido para o salário');
@@ -147,21 +145,27 @@ function calculatePJSalary() {
         }
 
         // Usar mesma lógica de cálculo
-        const receitaAnual = receitaBruta || grossSalary * 12;
-        const folhaPagamentoAnual = folhaPagamento || receitaAnual * 0.28;
-        const hourlyRate = grossSalary / 176;
+        // Receita anual calculada a partir do bruto mensal
+        const receitaAnual = grossSalary * 12;
+        // Se houver campo de folha (removido por padrão), use-o; senão envie 0 para indicar "folha desconhecida"
+        const folhaEl = document.getElementById('folhaPagamento');
+        const folhaPagamentoAnual = folhaEl ? parseMoneyValue(folhaEl.value || '0') : 0;
+		const hourlyRate = grossSalary / 176;
 
         let resultado;
-		if (typeof calcularImpostoDevido === 'function') {
-			resultado = calcularImpostoDevido(
-				grossSalary,
-				receitaAnual,
-				folhaPagamentoAnual
-			);
-		} else {
-			console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
-			resultado = impostoFallbackMensal(grossSalary);
-		}
+        if (typeof calcularImpostoDevido === 'function') {
+            resultado = calcularImpostoDevido(
+                grossSalary,
+                receitaAnual,
+                folhaPagamentoAnual
+            );
+        } else {
+            console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+            resultado = impostoFallbackMensal(grossSalary);
+        }
+
+        // Mostrar aviso de anexo no resultado (se aplicável)
+        showAnexoWarning('anexoWarning', resultado);
 
         const netSalary = grossSalary - resultado.impostoDevido;
         const annualSalary = netSalary * 12;  // Calculando salário anual
@@ -257,22 +261,26 @@ async function convertSalary() {
         const yearlyRate = salaryUSD * 12;
         const yearlyBRL = convertedValue * 12;
         
-        // Usar mesma lógica do PJ
+        // Usar mesma lógica do PJ: receita anual do valor convertido.
         const receitaAnual = yearlyBRL;
-        const folhaPagamento = yearlyBRL * 0.28; // 28% para tentar Anexo III
-
+        // tentar ler campo de folha se existir (padrão removed); se não, passar 0
+        const folhaEl = document.getElementById('folhaPagamento');
+        const folhaPagamento = folhaEl ? parseMoneyValue(folhaEl.value || '0') : 0;
         // Calcular impostos usando a mesma função do PJ
         let resultado;
-		if (typeof calcularImpostoDevido === 'function') {
-			resultado = calcularImpostoDevido(
-				convertedValue,    // valor mensal em R$
-				receitaAnual,      // receita bruta 12 meses
-				folhaPagamento     // folha de pagamento 12 meses
-			);
-		} else {
-			console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
-			resultado = impostoFallbackMensal(convertedValue);
-		}
+         if (typeof calcularImpostoDevido === 'function') {
+             resultado = calcularImpostoDevido(
+                 convertedValue,    // valor mensal em R$
+                 receitaAnual,      // receita bruta 12 meses
+                 folhaPagamento     // folha de pagamento 12 meses
+             );
+         } else {
+             console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+             resultado = impostoFallbackMensal(convertedValue);
+         }
+
+        // Mostrar aviso de anexo no resultado (se aplicável)
+        showAnexoWarning('anexoWarning', resultado);
 
         const netSalary = convertedValue - resultado.impostoDevido;
 
@@ -345,11 +353,15 @@ function updatePJSalaryFromHourly() {
 }
 
 function clearPJ() {
-    document.getElementById('salaryPJ').value = '';
-    document.getElementById('hourlyPJInput').value = '';
-    document.getElementById('folhaPagamento').value = '';
-    document.getElementById('receitaBruta').value = '';
-    document.getElementById('result').style.display = 'none';
+    const salaryEl = document.getElementById('salaryPJ');
+    if (salaryEl) salaryEl.value = '';
+    const hourlyEl = document.getElementById('hourlyPJInput');
+    if (hourlyEl) hourlyEl.value = '';
+    // limpar folha de pagamento se existir (campo opcional reintroduzido)
+    const folhaEl = document.getElementById('folhaPagamento');
+    if (folhaEl) folhaEl.value = '';
+    const resultEl = document.getElementById('result');
+    if (resultEl) resultEl.style.display = 'none';
 }
 
 function calculateCLTSalary() {
@@ -449,52 +461,24 @@ function compareRegimes() {
 
         // Cálculos PJ usando Simples Nacional 2025
         const pjAnual = pjValue * 12;
-        const folhaPagamento = pjAnual * 0.28; // 28% para tentar enquadramento no Anexo III
-
+        // tentar ler campo de folha se existir; caso contrário passar 0 para indicar desconhecido
+        const folhaEl = document.getElementById('folhaPagamento');
+        const folhaPagamento = folhaEl ? parseMoneyValue(folhaEl.value || '0') : 0;
         // Usar a nova função de cálculo do Simples Nacional 2025
         let resultado;
-		if (typeof calcularImpostoDevido === 'function') {
-			resultado = calcularImpostoDevido(
-				pjValue,           // valor mensal
-				pjAnual,          // receita bruta 12 meses
-				folhaPagamento    // folha de pagamento 12 meses
-			);
-		} else {
-			console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
-			resultado = impostoFallbackMensal(pjValue);
-		}
-        
-        const liquidoPJ = pjValue - resultado.impostoDevido;
-        const totalAnualPJ = liquidoPJ * 12; // 12 meses de receita líquida
+         if (typeof calcularImpostoDevido === 'function') {
+             resultado = calcularImpostoDevido(
+                 pjValue,           // valor mensal
+                 pjAnual,          // receita bruta 12 meses
+                 folhaPagamento    // folha de pagamento 12 meses
+             );
+         } else {
+             console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+             resultado = impostoFallbackMensal(pjValue);
+         }
 
-        // Critério de escolha: usar percentual configurável (em %) ou fallback para 38%
-        const defaultThresholdPercent = 38; // sugestão: usar 38% por padrão
-        const inputPercent = parseFloat(document.getElementById('pjThreshold')?.value?.replace(',', '.'));
-        const thresholdPercent = (!isNaN(inputPercent) && inputPercent >= 0) ? inputPercent : defaultThresholdPercent;
-        const thresholdFactor = 1 + (thresholdPercent / 100);
-
-        const thresholdMonthly = totalCLT * thresholdFactor;
-        const meetsThreshold = liquidoPJ >= thresholdMonthly;
-        const gapMonthly = meetsThreshold ? 0 : thresholdMonthly - liquidoPJ;
-        const gapPercent = meetsThreshold ? 0 : (gapMonthly / thresholdMonthly) * 100;
-
-        // Atualizar tabela CLT (uso helpers seguros)
-        safeSetText('clt_bruto', formatCurrency(cltSalary));
-        safeSetText('clt_inss', formatCurrency(inss));
-        safeSetText('clt_irrf', formatCurrency(irrf));
-        safeSetText('clt_liquido', formatCurrency(liquidoCLT));
-        safeSetText('clt_fgts', formatCurrency(fgts));
-        safeSetText('clt_13', formatCurrency(decimoTerceiro));
-        safeSetText('clt_ferias', formatCurrency(ferias));
-        safeSetText('clt_beneficios', formatCurrency(beneficios));
-        safeSetText('clt_total', formatCurrency(totalCLT));
-        safeSetText('clt_anual', formatCurrency(totalAnualCLT));
-
-        // Atualizar tabela PJ com detalhamento do Simples Nacional 2025
-        safeSetText('pj_bruto', formatCurrency(pjValue));
-        safeSetText('pj_simples', `${formatCurrency(resultado.impostoDevido)} (${resultado.aliquotaEfetiva.toFixed(2)}% - Anexo ${resultado.anexoAplicado})`);
-        safeSetText('pj_liquido', formatCurrency(liquidoPJ));
-        safeSetText('pj_anual', formatCurrency(totalAnualPJ));
+        // Mostrar aviso de anexo no painel comparativo (se aplicável)
+        showAnexoWarning('compareAnexoWarning', resultado);
 
         // Calcular e mostrar diferenças
         const difMensal = liquidoPJ - totalCLT;
@@ -598,4 +582,21 @@ function clearComparison() {
         const el = document.getElementById(id);
         if (el) el.textContent = '-';
     });
+}
+
+// Mostrar/ocultar aviso após cálculos. Adicionei uma função utilitária showAnexoWarning() e a utilizei em calculatePJSalary, convertSalary e compareRegimes logo após determinarem `resultado`.
+function showAnexoWarning(containerId, resultado) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    // Mostrar aviso apenas se houve erro/fallback no cálculo do anexo
+    if (!resultado || resultado.anexoAplicado === 'Erro - fallback') {
+        el.style.display = 'block';
+        el.textContent = 'Aviso: não foi possível determinar o anexo corretamente ou foi usado fallback no cálculo. Resultados podem estar usando valores conservadores.';
+        return;
+    }
+
+    // Caso contrário, não exibir aviso (não mostrar aviso para Anexo V ou III)
+    el.style.display = 'none';
+    el.textContent = '';
 }

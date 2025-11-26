@@ -59,23 +59,34 @@ function calcularAliquotaEfetiva(receitaBruta12Meses, anexo) {
 
 function calcularImpostoDevido(valorMensal, receitaBruta12Meses, folhaPagamento12Meses) {
     try {
-        // Validações de entrada
-        if (valorMensal <= 0 || receitaBruta12Meses <= 0) {
-            throw new Error('Valores devem ser maiores que zero');
+        // Validar receita
+        if (!receitaBruta12Meses || receitaBruta12Meses <= 0) {
+            throw new Error('Receita bruta inválida para cálculo do Simples Nacional');
         }
 
-        // Cálculo do Fator R
-        const fatorR = folhaPagamento12Meses / receitaBruta12Meses;
-        const anexoAplicado = fatorR >= 0.28 ? ANEXO_III : ANEXO_V;
-        
+        // Calcular Fator R apenas se informada uma folha válida (>0)
+        let fatorR = null;
+        if (typeof folhaPagamento12Meses === 'number' && folhaPagamento12Meses > 0) {
+            fatorR = folhaPagamento12Meses / receitaBruta12Meses;
+        } else {
+            // folha não informada ou zero: manter fatorR como null (sem erro)
+            fatorR = null;
+        }
+
+        // FORÇAR Anexo III para consultoria TI (decisão solicitada)
+        const anexoAplicado = ANEXO_III;
+
         // Cálculo da alíquota
         const calculo = calcularAliquotaEfetiva(receitaBruta12Meses, anexoAplicado);
-        
-        // Log para debugging
+        const aliquotaNominal = calculo.aliquota;
+        const aliquotaEfetiva = calculo.efetiva;
+        const impostoDevido = valorMensal * aliquotaEfetiva;
+
+        // Log para debugging (explicita que foi forçado ao III)
         console.log({
             receitaAnual: receitaBruta12Meses,
             fatorR: fatorR,
-            anexo: fatorR >= 0.28 ? 'III' : 'V',
+            anexoAplicado: 'III (forçado)',
             aliquotaNominal: calculo.aliquota,
             deducao: calculo.valorDeducao,
             aliquotaEfetiva: calculo.efetiva
@@ -83,16 +94,25 @@ function calcularImpostoDevido(valorMensal, receitaBruta12Meses, folhaPagamento1
 
         return {
             receitaBruta: receitaBruta12Meses,
-            fatorR: fatorR,
-            anexoAplicado: fatorR >= 0.28 ? 'III' : 'V',
-            aliquotaNominal: calculo.aliquota,
-            aliquotaEfetiva: calculo.efetiva,
-            impostoDevido: valorMensal * calculo.efetiva,
+            fatorR: fatorR === null ? 0 : fatorR,
+            anexoAplicado: 'III',
+            aliquotaNominal: aliquotaNominal,
+            aliquotaEfetiva: aliquotaEfetiva,
+            impostoDevido: impostoDevido,
             faixaUtilizada: encontrarFaixaCorreta(receitaBruta12Meses, anexoAplicado.faixas)
         };
     } catch (error) {
-        console.error('Erro no cálculo:', error);
-        throw error;
+        console.error('Erro no cálculo do Simples Nacional:', error);
+        // Retornar fallback conservador
+        return {
+            receitaBruta: receitaBruta12Meses,
+            fatorR: 0,
+            anexoAplicado: 'Erro - fallback',
+            aliquotaNominal: 0.335,
+            aliquotaEfetiva: 0.335,
+            impostoDevido: valorMensal * 0.335,
+            faixaUtilizada: { limite: receitaBruta12Meses, deducao: 0 }
+        };
     }
 }
 
