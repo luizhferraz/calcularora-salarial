@@ -446,39 +446,67 @@ function compareRegimes() {
             return;
         }
 
-        // Cálculos CLT (mantém os mesmos pois são de 2024)
+        // Cálculos CLT
         const inss = calcularINSS(cltSalary);
         const baseIRRF = cltSalary - inss;
         const irrf = calcularIRRF(baseIRRF);
         const fgts = cltSalary * 0.08;
         const ferias = (cltSalary + (cltSalary / 3)) / 12;
         const decimoTerceiro = cltSalary / 12;
-        
         const liquidoCLT = cltSalary - inss - irrf;
         const beneficios = fgts + ferias + decimoTerceiro;
         const totalCLT = liquidoCLT + beneficios;
-        const totalAnualCLT = (totalCLT * 12) + cltSalary; // 12 meses + 13º
+        const totalAnualCLT = (totalCLT * 12) + cltSalary;
 
-        // Cálculos PJ usando Simples Nacional 2025
+        // Cálculos PJ
         const pjAnual = pjValue * 12;
-        // tentar ler campo de folha se existir; caso contrário passar 0 para indicar desconhecido
         const folhaEl = document.getElementById('folhaPagamento');
         const folhaPagamento = folhaEl ? parseMoneyValue(folhaEl.value || '0') : 0;
-        // Usar a nova função de cálculo do Simples Nacional 2025
-        let resultado;
-         if (typeof calcularImpostoDevido === 'function') {
-             resultado = calcularImpostoDevido(
-                 pjValue,           // valor mensal
-                 pjAnual,          // receita bruta 12 meses
-                 folhaPagamento    // folha de pagamento 12 meses
-             );
-         } else {
-             console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
-             resultado = impostoFallbackMensal(pjValue);
-         }
 
-        // Mostrar aviso de anexo no painel comparativo (se aplicável)
-        showAnexoWarning('compareAnexoWarning', resultado);
+        let resultado;
+        if (typeof calcularImpostoDevido === 'function') {
+            resultado = calcularImpostoDevido(
+                pjValue,
+                pjAnual,
+                folhaPagamento
+            );
+        } else {
+            console.warn('calcularImpostoDevido não definido — usando fallback de imposto');
+            resultado = impostoFallbackMensal(pjValue);
+        }
+
+        // Definir liquidoPJ corretamente
+        const liquidoPJ = pjValue - resultado.impostoDevido;
+        const totalAnualPJ = liquidoPJ * 12;
+
+        // Critério de escolha: usar percentual configurável (em %) ou fallback para 38%
+        const defaultThresholdPercent = 38;
+        const inputPercent = parseFloat(document.getElementById('pjThreshold')?.value?.replace(',', '.'));
+        const thresholdPercent = (!isNaN(inputPercent) && inputPercent >= 0) ? inputPercent : defaultThresholdPercent;
+        const thresholdFactor = 1 + (thresholdPercent / 100);
+
+        const thresholdMonthly = totalCLT * thresholdFactor;
+        const meetsThreshold = liquidoPJ >= thresholdMonthly;
+        const gapMonthly = meetsThreshold ? 0 : thresholdMonthly - liquidoPJ;
+        const gapPercent = meetsThreshold ? 0 : (gapMonthly / thresholdMonthly) * 100;
+
+        // Atualizar tabela CLT
+        safeSetText('clt_bruto', formatCurrency(cltSalary));
+        safeSetText('clt_inss', formatCurrency(inss));
+        safeSetText('clt_irrf', formatCurrency(irrf));
+        safeSetText('clt_liquido', formatCurrency(liquidoCLT));
+        safeSetText('clt_fgts', formatCurrency(fgts));
+        safeSetText('clt_13', formatCurrency(decimoTerceiro));
+        safeSetText('clt_ferias', formatCurrency(ferias));
+        safeSetText('clt_beneficios', formatCurrency(beneficios));
+        safeSetText('clt_total', formatCurrency(totalCLT));
+        safeSetText('clt_anual', formatCurrency(totalAnualCLT));
+
+        // Atualizar tabela PJ
+        safeSetText('pj_bruto', formatCurrency(pjValue));
+        safeSetText('pj_simples', `${formatCurrency(resultado.impostoDevido)} (${resultado.aliquotaEfetiva.toFixed(2)}% - Anexo ${resultado.anexoAplicado})`);
+        safeSetText('pj_liquido', formatCurrency(liquidoPJ));
+        safeSetText('pj_anual', formatCurrency(totalAnualPJ));
 
         // Calcular e mostrar diferenças
         const difMensal = liquidoPJ - totalCLT;
@@ -503,6 +531,9 @@ function compareRegimes() {
         } else {
             console.warn('Elemento compareSummary não encontrado; recomendação não exibida.');
         }
+
+        // Mostrar aviso de anexo (se aplicável)
+        showAnexoWarning('compareAnexoWarning', resultado);
 
         // Mostrar resultados
         safeShow('compareResults', true);
